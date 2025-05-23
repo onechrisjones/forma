@@ -1,0 +1,60 @@
+{
+    "site": {
+        "title": "Forma",
+        "description": "A modern flat file CMS with powerful features and texty content management",
+        "url": "http:\/\/localhost:8888",
+        "timezone": "America\/New_York",
+        "language": "en",
+        "default_author": "Admin"
+    },
+    "admin": {
+        "username": "admin",
+        "password": "admin",
+        "email": "admin@example.com"
+    },
+    "content": {
+        "pages_dir": "content\/pages",
+        "blog_dir": "content\/blog",
+        "snippets_dir": "content\/snippets",
+        "podcast_dir": "content\/podcast",
+        "uploads_dir": "uploads",
+        "feeds_dir": "feeds"
+    },
+    "templates": {
+        "dir": "content\/templates",
+        "cache_dir": "cache\/twig",
+        "default_layout": "default.twig"
+    },
+    "podcast": {
+        "title": "Alice's Adventures in Wonderland",
+        "description": "Take a stroll down the streets of Wonderland with this podcast, featuring the O.G., Alice herself.",
+        "author": "Lewis Carrol",
+        "email": "hello@alta-forma.com",
+        "category": "Kids & Family",
+        "explicit": "no",
+        "language": "en-us",
+        "feed_url": "http:\/\/localhost:8888\/feeds\/podcast.xml",
+        "image": "cover.png",
+        "subcategory": "Stories for Kids"
+    },
+    "blog": {
+        "posts_per_page": 10,
+        "excerpt_length": 250,
+        "feed_posts": 20,
+        "default_author": "onechrisjones"
+    },
+    "security": {
+        "session_lifetime": 3600,
+        "allowed_upload_types": [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "pdf",
+            "mp3",
+            "m4a",
+            "mp4"
+        ],
+        "max_upload_size": 52428800
+    }
+}

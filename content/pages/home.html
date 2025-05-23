@@ -1,0 +1,677 @@
+<!--META
+slug: home
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forma | The Flat-File CMS That Doesn't Suck</title>
+  <meta name="description" content="Forma delivers a sleek, dark-themed admin interface and lightweight power for managing content, blogs, and podcasts with zero fuss.">
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwcHgiIGhlaWdodD0iMjgwcHgiIHZpZXdCb3g9IjAgMCA0MDAgMjgwIj48ZyBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0iI2ZjYmUzNCIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMCwwIEw0MDAsMCBMMzIwLDgwIEwwLDgwIEwwLDAgWiI+PC9wYXRoPjxwYXRoIGQ9Ik0wLDEwMCBMMzAwLDEwMCBMMjIwLDE4MCBMMCwxODAgTDAsMTAwIFoiPjwvcGF0aD48cGF0aCBkPSJNMCwyMDAgTDgwLDIwMCBMMCwyODAgTDAsMjAwIFoiPjwvcGF0aD48L2c+PC9zdmc+">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <!-- Google Fonts: Chakra Petch -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      --primary: #fcbe34;
+      --primary-end: #e6a912;
+      --primary-dark: #d99e00;
+      --bg: #1e1e1e;
+      --bg-end: #252526;
+      --text: #d4d4d4;
+      --text-muted: #888888;
+      --border: #3e3e42;
+      --hover-bg: rgba(255, 255, 255, 0.1);
+      --error: #f44336;
+      --error-end: #d32f2f;
+      --footer-bg: #2d2d2d;
+      --footer-bg-end: #252526;
+      --accent: #fcbe34;
+      --accent-hover: #e6a912;
+      --accent-text: #121212;
+      --font-family: 'Chakra Petch', sans-serif;
+    }
+
+    /* Apply Space Grotesk to all elements */
+    * {
+      font-family: var(--font-family);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    .navbar {
+      background-color: var(--bg-end);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .navbar-brand {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1.75rem;
+    }
+
+    .nav-link {
+      color: var(--text);
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link-page {
+      background-color: rgba(252, 190, 52, 0.1);
+      border: 1px solid rgba(252, 190, 52, 0.3);
+      border-radius: 4px;
+      padding: 0.5rem 1rem !important;
+      margin: 0 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .nav-link-page:hover {
+      background-color: rgba(252, 190, 52, 0.2);
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-end);
+      border-color: var(--primary-end);
+      color: var(--accent-text);
+    }
+
+    .btn-outline-primary {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline-primary:hover {
+      background-color: var(--primary);
+      color: var(--accent-text);
+    }
+
+    .hero-section {
+      background: var(--bg);
+      padding: 6rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Hero animated background */
+    .hero-bg {
+      animation: slide 8s ease-in-out infinite alternate;
+      background-image: linear-gradient(-60deg, rgba(252, 190, 52, 0.1) 50%, rgba(30, 30, 30, 0.8) 50%);
+      bottom: 0;
+      left: -50%;
+      opacity: 0.5;
+      position: absolute;
+      right: -50%;
+      top: 0;
+      z-index: 0;
+    }
+
+    .hero-bg.bg1 {
+      /* Default styles already applied above */
+    }
+
+    .hero-bg.bg2 {
+      animation-direction: alternate-reverse;
+      animation-duration: 10s;
+      background-image: linear-gradient(-60deg, rgba(30, 30, 30, 0.9) 50%, rgba(217, 158, 0, 0.1) 50%);
+    }
+
+    .hero-bg.bg3 {
+      animation-duration: 12s;
+      background-image: linear-gradient(-60deg, rgba(37, 37, 38, 0.8) 50%, rgba(230, 169, 18, 0.1) 50%);
+    }
+
+    @keyframes slide {
+      0% {
+        transform: translateX(-15%);
+      }
+      100% {
+        transform: translateX(15%);
+      }
+    }
+
+    .hero-title {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 3.5rem;
+      line-height: 1.1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-subtitle {
+      color: var(--text);
+      font-size: 1.5rem;
+      max-width: 800px;
+      margin: 1.5rem auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-section {
+      background-color: var(--bg-end);
+      padding: 5rem 0;
+    }
+
+    .features-title {
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 3rem;
+    }
+
+    .feature-card {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      height: 100%;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .feature-icon {
+      color: var(--primary);
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .section-title {
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      margin-bottom: 3rem;
+    }
+
+    .flat-file-section, .usage-section, .install-section {
+      padding: 5rem 0;
+    }
+
+    .flat-file-section {
+      background-color: var(--bg);
+    }
+
+    .usage-section {
+      background-color: var(--bg-end);
+    }
+
+    .usage-img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s;
+    }
+
+    .usage-img:hover {
+      transform: scale(1.02);
+    }
+
+    .install-section {
+      background-color: var(--bg);
+    }
+
+    .install-step {
+      background-color: var(--bg-end);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .step-number {
+      background-color: var(--primary);
+      color: var(--accent-text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: var(--accent-text);
+      padding: 5rem 0;
+    }
+
+    .footer {
+      background-color: var(--footer-bg);
+      padding: 3rem 0 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-title {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .footer-link {
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .text-muted {
+      color: var(--text-muted) !important;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+    }
+
+    /* Logo styling */
+    .navbar-brand svg {
+      fill: var(--primary);
+      color: var(--primary);
+    }
+    
+    .hero-logo {
+      color: var(--primary);
+      filter: drop-shadow(0 0 10px rgba(252, 190, 52, 0.3));
+      z-index: 1;
+      position: relative;
+    }
+    
+    .footer-logo {
+      width: 40px;
+      height: 60px;
+      margin-right: 10px;
+      color: var(--primary);
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <svg width="32" height="24" viewBox="0 0 400 280" class="me-2">
+          <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+            <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+            <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+            <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+          </g>
+        </svg>
+        Forma
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#features">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#why-flat-file">Why Flat-File</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#usage">Usage</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#install">Install</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-page" href="/blog"><i class="fas fa-blog me-1"></i> Blog</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-page" href="/podcast"><i class="fas fa-podcast me-1"></i> Podcast</a>
+          </li>
+          <!--li class="nav-item">
+            <a class="nav-link" href="/admin">Login</a>
+          </li-->
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section text-center">
+    <div class="hero-bg bg1"></div>
+    <div class="hero-bg bg2"></div>
+    <div class="hero-bg bg3"></div>
+    <div class="container position-relative">
+      <svg width="120" height="84" viewBox="0 0 400 280" version="1.1" class="hero-logo mb-4">
+        <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+          <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+          <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+          <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+        </g>
+      </svg>
+      <h1 class="hero-title">The Flat-File CMS That Doesn't Suck</h1>
+      <p class="hero-subtitle">Say goodbye to bloated, database-driven nightmares. Forma delivers a sleek admin interface and lightweight power that's as fast as it is badass.</p>
+      <div class="d-flex justify-content-center gap-3 position-relative" style="z-index: 1;">
+        <a href="https://github.com/onechrisjones/forma" class="btn btn-primary btn-lg px-4">Get Started</a>
+        <a href="#features" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Intro Section -->
+  <section class="py-5 bg-dark">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <p class="lead">Welcome to Forma—where content management gets a kick in the ass and actually becomes enjoyable. No databases clogging up your vibe, no bloat slowing you down—just a modern, flat-file system built with PHP that's here to make your web life easier.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="feature-section">
+    <div class="container">
+      <h2 class="features-title text-center mb-5">Why Forma Kicks Ass</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-moon"></i></div>
+            <h3 class="feature-title">Admin Interface</h3>
+            <p>Dark, sleek, and so damn intuitive, you'll wonder why every CMS doesn't look this good.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+            <h3 class="feature-title">Pages</h3>
+            <p>Markdown or HTML—your call. Create and edit pages like you own the place.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-blog"></i></div>
+            <h3 class="feature-title">Blog</h3>
+            <p>YAML front matter for metadata mastery, plus auto-generated RSS feeds because we're not savages.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-podcast"></i></div>
+            <h3 class="feature-title">Podcasts</h3>
+            <p>Host episodes like a rockstar. We handle the feed, you bask in the glory.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-puzzle-piece"></i></div>
+            <h3 class="feature-title">Snippets</h3>
+            <p>Reusable content blocks with Twig templating. Copy-paste is for suckers.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-upload"></i></div>
+            <h3 class="feature-title">Files</h3>
+            <p>Drag, drop, and manage uploads without losing your mind.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+            <h3 class="feature-title">Speed</h3>
+            <p>No database, no lag—just pure, unadulterated performance.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+            <h3 class="feature-title">Security</h3>
+            <p>Locked down tighter than a vault. Modern auth and file validation keep the bad guys out.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-paint-brush"></i></div>
+            <h3 class="feature-title">Customization</h3>
+            <p>Themes and layouts? Nope. Just code that shit to your will. Make it yours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Flat-File Section -->
+  <section id="why-flat-file" class="flat-file-section">
+    <div class="container">
+      <h2 class="section-title text-center">Databases? We Don't Need 'Em</h2>
+      <p class="section-subtitle text-center">Forma turns these perks into a content management experience that's quick, clean, and tough as nails.</p>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-tachometer-alt"></i></div>
+            <h3 class="feature-title">Speed</h3>
+            <p>No queries, just instant load times that'll make your site fly.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-coffee"></i></div>
+            <h3 class="feature-title">Simplicity</h3>
+            <p>Setup so easy, you'll be done before your coffee's cold.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-suitcase"></i></div>
+            <h3 class="feature-title">Portability</h3>
+            <p>Move your site anywhere—no database exports, no bullshit.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-lock"></i></div>
+            <h3 class="feature-title">Security</h3>
+            <p>Fewer moving parts mean fewer ways for shit to hit the fan.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage Section -->
+  <section id="usage" class="usage-section">
+    <div class="container">
+      <h2 class="section-title text-center">See Forma In Action</h2>
+      <p class="section-subtitle text-center">Beautiful interfaces that actually make sense—imagine that.</p>
+      
+      <div class="row g-5 align-items-center mb-5">
+        <div class="col-lg-6">
+          <h3 class="mb-4">Dark-Mode Admin That's Easy on the Eyes</h3>
+          <p>The admin interface is designed for long editing sessions. Dark theme, intuitive navigation, and carefully chosen contrasts reduce eye strain while looking damn good.</p>
+          <p>Every feature is just a click away, organized in a way that makes sense for content creators.</p>
+        </div>
+        <div class="col-lg-6">
+          <img src="uploads/screenshot-a.png" class="usage-img" alt="Screenshot of Forma's dark-themed admin dashboard showing navigation and content editing interface">
+        </div>
+      </div>
+      
+      <div class="row g-5 align-items-center mb-5">
+        <div class="col-lg-6 order-lg-2">
+          <h3 class="mb-4">Content Editor That Doesn't Fight You</h3>
+          <p>Write in Markdown or HTML with our distraction-free editor. Preview your work in real-time, add meta information with simple fields, and publish with a single click.</p>
+          <p>No more wrestling with complex UI elements just to write a damn blog post.</p>
+        </div>
+        <div class="col-lg-6 order-lg-1">
+          <img src="uploads/screenshot-b.png" class="usage-img" alt="Screenshot of Forma's content editor showing markdown input on left and live preview on right">
+        </div>
+      </div>
+      
+      <div class="row g-5 align-items-center">
+        <div class="col-lg-6">
+          <h3 class="mb-4">File Management That Makes Sense</h3>
+          <p>Upload, organize, and use your media with ease. Drag and drop uploads, instant previews, and copy-paste URLs make working with files a breeze.</p>
+          <p>Embedding images, audio, or documents has never been this straightforward.</p>
+        </div>
+        <div class="col-lg-6">
+          <img src="uploads/screenshot-c.png" class="usage-img" alt="Screenshot of Forma's file manager showing grid of uploaded images with hover controls">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section id="install" class="install-section">
+    <div class="container">
+      <h2 class="section-title text-center">Get Started in Minutes</h2>
+      <p class="section-subtitle text-center">No complicated setup. No database configuration. Just deploy and go.</p>
+      
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="install-step">
+            <div class="step-number">1</div>
+            <div>
+              <h5 class="mb-0">Clone or download the repo from GitHub</h5>
+              <code class="text-muted">git clone https://github.com/onechrisjones/forma.git</code>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">2</div>
+            <div>
+              <h5 class="mb-0">Set permissions</h5>
+              <code class="text-muted">chmod -R 755 .<br>chmod -R 777 content uploads feeds config</code>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">3</div>
+            <div>
+              <h5 class="mb-0">Point your web server at it</h5>
+              <p class="mb-0 text-muted">Apache or Nginx, your pick. We've included configuration files for both.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">4</div>
+            <div>
+              <h5 class="mb-0">Log in with defaults and change them fast</h5>
+              <p class="mb-0 text-muted">Username: admin / Password: admin</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-number">5</div>
+            <div>
+              <h5 class="mb-0">Start building something awesome</h5>
+              <p class="mb-0 text-muted">Hit a snag? Visit /checklist.php to diagnose any issues.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section text-center">
+    <div class="container">
+      <h2 class="mb-4">Ready to Shape Your Content Game?</h2>
+      <p class="lead mb-4">Ditch the database drama and grab Forma now. Your website's begging for this kind of cool.</p>
+      <a href="https://github.com/onechrisjones/forma" class="btn btn-dark btn-lg px-4">Get It on GitHub</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row gy-4">
+        <div class="col-md-4">
+          <h4 class="footer-title d-flex align-items-center">
+            <svg width="40" height="28" viewBox="0 0 400 280" class="footer-logo">
+              <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+                <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+                <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+                <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+              </g>
+            </svg>
+            Forma
+          </h4>
+          <p>"Forma isn't just another content management system—it's the one you'll actually want to use. Flat-file, fast, and packed with features that don't suck."</p>
+        </div>
+        <div class="col-md-3">
+          <h5 class="footer-title">Quick Links</h5>
+          <ul class="list-unstyled">
+            <li><a href="#features" class="footer-link">Features</a></li>
+            <li><a href="#why-flat-file" class="footer-link">Why Flat-File</a></li>
+            <li><a href="#usage" class="footer-link">Usage</a></li>
+            <li><a href="#install" class="footer-link">Install</a></li>
+            <li><a href="/admin" class="footer-link">Admin Login</a></li>
+          </ul>
+        </div>
+        <div class="col-md-5">
+          <h5 class="footer-title">Support</h5>
+          <p>We've got your back:</p>
+          <ul class="list-unstyled">
+            <li>• Run /checklist.php to check your setup</li>
+            <li>• Dig into the docs</li>
+            <li>• Open a GitHub issue if you need help</li>
+          </ul>
+          <p class="mt-3">
+            <a href="https://github.com/onechrisjones/forma" class="footer-link me-3"><i class="fab fa-github"></i> GitHub</a>
+          </p>
+        </div>
+      </div>
+      <hr class="my-4" style="border-color: var(--border);">
+      <div class="row">
+        <div class="col-md-6">
+          <p class="mb-0">Crafted by @onechrisjones. MIT Licensed.</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p class="mb-0 text-muted">Shoutout to the open-source crew for the tools that make Forma a reality.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

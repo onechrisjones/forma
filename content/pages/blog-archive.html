@@ -1,0 +1,391 @@
+<!--META
+slug: blog-archive-template
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Forma</title>
+    <meta name="description" content="Forma blog - thoughts, updates and tutorials on the flat-file CMS that doesn't suck.">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwcHgiIGhlaWdodD0iMjgwcHgiIHZpZXdCb3g9IjAgMCA0MDAgMjgwIj48ZyBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0iI2ZjYmUzNCIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMCwwIEw0MDAsMCBMMzIwLDgwIEwwLDgwIEwwLDAgWiI+PC9wYXRoPjxwYXRoIGQ9Ik0wLDEwMCBMMzAwLDEwMCBMMjIwLDE4MCBMMCwxODAgTDAsMTAwIFoiPjwvcGF0aD48cGF0aCBkPSJNMCwyMDAgTDgwLDIwMCBMMCwyODAgTDAsMjAwIFoiPjwvcGF0aD48L2c+PC9zdmc+">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts: Chakra Petch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary: #fcbe34;
+            --primary-end: #e6a912;
+            --primary-dark: #d99e00;
+            --bg: #1e1e1e;
+            --bg-end: #252526;
+            --text: #d4d4d4;
+            --text-muted: #888888;
+            --border: #3e3e42;
+            --hover-bg: rgba(255, 255, 255, 0.1);
+            --error: #f44336;
+            --error-end: #d32f2f;
+            --footer-bg: #2d2d2d;
+            --footer-bg-end: #252526;
+            --accent: #fcbe34;
+            --accent-hover: #e6a912;
+            --accent-text: #121212;
+            --font-family: 'Chakra Petch', sans-serif;
+        }
+
+        /* Apply Chakra Petch to all elements */
+        * {
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        .navbar {
+            background-color: var(--bg-end);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar-brand {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.75rem;
+        }
+
+        .nav-link {
+            color: var(--text);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .navbar-brand svg {
+            fill: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: var(--accent-text);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-end);
+            border-color: var(--primary-end);
+            color: var(--accent-text);
+        }
+
+        .hero-section {
+            background: var(--bg);
+            padding: 5rem 0 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hero animated background */
+        .hero-bg {
+            animation: slide 8s ease-in-out infinite alternate;
+            background-image: linear-gradient(-60deg, rgba(252, 190, 52, 0.1) 50%, rgba(30, 30, 30, 0.8) 50%);
+            bottom: 0;
+            left: -50%;
+            opacity: 0.5;
+            position: absolute;
+            right: -50%;
+            top: 0;
+            z-index: 0;
+        }
+
+        .hero-bg.bg1 {
+            /* Default styles already applied above */
+        }
+
+        .hero-bg.bg2 {
+            animation-direction: alternate-reverse;
+            animation-duration: 10s;
+            background-image: linear-gradient(-60deg, rgba(30, 30, 30, 0.9) 50%, rgba(217, 158, 0, 0.1) 50%);
+        }
+
+        .hero-bg.bg3 {
+            animation-duration: 12s;
+            background-image: linear-gradient(-60deg, rgba(37, 37, 38, 0.8) 50%, rgba(230, 169, 18, 0.1) 50%);
+        }
+
+        @keyframes slide {
+            0% {
+                transform: translateX(-15%);
+            }
+            100% {
+                transform: translateX(15%);
+            }
+        }
+
+        .hero-title {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 2.5rem;
+            line-height: 1.1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-subtitle {
+            color: var(--text);
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 1rem auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .blog-section {
+            padding: 4rem 0;
+        }
+
+        .card {
+            background-color: var(--bg-end);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .card-title a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .card-title a:hover {
+            color: var(--primary-end);
+            text-decoration: none;
+        }
+
+        .card-text {
+            color: var(--text);
+        }
+
+        .card-footer {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .post-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-read-more {
+            background-color: var(--primary);
+            color: var(--accent-text);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn-read-more:hover {
+            background-color: var(--primary-end);
+            color: var(--accent-text);
+        }
+
+        .footer {
+            background-color: var(--footer-bg);
+            padding: 3rem 0 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-title {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .footer-link {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-logo {
+            width: 40px;
+            height: 60px;
+            margin-right: 10px;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <svg width="32" height="24" viewBox="0 0 400 280" class="me-2">
+                    <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+                        <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+                        <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+                        <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+                    </g>
+                </svg>
+                Forma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/blog" aria-current="page">Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="hero-bg bg1"></div>
+        <div class="hero-bg bg2"></div>
+        <div class="hero-bg bg3"></div>
+        <div class="container position-relative">
+            <h1 class="hero-title">Blog</h1>
+            <p class="hero-subtitle">Thoughts, updates, and guides from the Forma team</p>
+        </div>
+    </section>
+
+    <!-- Blog Posts Section -->
+    <section class="blog-section">
+        <div class="container">
+            <div class="row g-4">
+                {% for post in posts %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h2 class="card-title">
+                                    <a href="/blog/{{ post.slug }}">{{ post.title }}</a>
+                                </h2>
+                                
+                                <div class="post-meta">
+                                    {% if post.date %}
+                                        <span class="date"><i class="far fa-calendar-alt me-1"></i> {{ post.date }}</span>
+                                    {% endif %}
+                                    
+                                    {% if post.author %}
+                                        <span class="author ms-2"><i class="far fa-user me-1"></i> {{ post.author }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if post.description %}
+                                    <p class="card-text">{{ post.description }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer text-end">
+                                <a href="/blog/{{ post.slug }}" class="btn btn-read-more">Read More <i class="fas fa-arrow-right ms-1"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <div class="row gy-4">
+                <div class="col-md-4">
+                    <h4 class="footer-title d-flex align-items-center">
+                        <svg width="40" height="28" viewBox="0 0 400 280" class="footer-logo">
+                            <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+                                <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+                                <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+                                <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+                            </g>
+                        </svg>
+                        Forma
+                    </h4>
+                    <p>The flat-file CMS that doesn't suck. Blazing-fast, no database needed.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="footer-title">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="footer-link">Home</a></li>
+                        <li><a href="/blog" class="footer-link">Blog</a></li>
+                        <li><a href="/#features" class="footer-link">Features</a></li>
+                        <li><a href="/#why-flat-file" class="footer-link">Why Flat-File</a></li>
+                        <li><a href="/admin" class="footer-link">Admin Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-5">
+                    <h5 class="footer-title">Support</h5>
+                    <p>Hit a snag? We've got your back:</p>
+                    <ul class="list-unstyled">
+                        <li>• Run /checklist.php to check your setup</li>
+                        <li>• Dig into the docs</li>
+                        <li>• Open a GitHub issue if you need help</li>
+                    </ul>
+                    <p class="mt-3">
+                        <a href="https://github.com/onechrisjones/forma" class="footer-link me-3"><i class="fab fa-github"></i> GitHub</a>
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: var(--border);">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">Crafted by Chris Jones. MIT Licensed.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">Shoutout to the open-source crew for the tools that make Forma a reality.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

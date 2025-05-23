@@ -1,0 +1,1106 @@
+/* ==========================================================================
+   FORMA CMS - ADMIN PANEL STYLES
+   ========================================================================== */
+
+/* ==========================================================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ========================================================================== */
+:root {
+    /* Primary Colors */
+    --primary: #fcbe34;
+    --primary-end: #e6a912;
+    --primary-dark: #d99e00;
+    --accent: #fcbe34;
+    --accent-hover: #e6a912;
+    --accent-text: #121212;
+    
+    /* Background Colors */
+    --bg: #1e1e1e;
+    --bg-end: #252526;
+    --footer-bg: #2d2d2d;
+    --footer-bg-end: #252526;
+    
+    /* Text Colors */
+    --text: #d4d4d4;
+    --text-muted: #888888;
+    
+    /* UI Colors */
+    --border: #3e3e42;
+    --hover-bg: rgba(255, 255, 255, 0.1);
+    --error: #f44336;
+    --error-end: #d32f2f;
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+}
+
+/* Utility Classes */
+.small {
+    font-size: 0.8em;
+}
+
+.ml-auto {
+    margin-left: auto;
+}
+
+/* ==========================================================================
+   LOGIN PAGE STYLES
+   ========================================================================== */
+.login-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to bottom, var(--bg), var(--bg-end));
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-container body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom, #1c1c1c, #141414);
+}
+
+.login-container h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--primary);
+    color: #121212;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: background 0.2s, color 0.2s;
+}
+
+.login-btn i {
+    font-size: 1.2rem;
+}
+
+.login-btn:hover, 
+.login-btn:focus {
+    background: var(--primary-end);
+    color: #121212;
+}
+
+/* ==========================================================================
+   LAYOUT COMPONENTS
+   ========================================================================== */
+
+/* Main Layout Structure */
+.main-container {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.section-container {
+    display: flex;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+}
+
+/* Header & Navigation */
+header {
+    height: 56px;
+    background: var(--bg-end);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Navigation Button Group */
+.button-group {
+    display: inline-flex;
+    overflow-x: auto;
+    padding: 4px;
+    max-width: calc(100vw - 100px);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    align-items: center;
+    height: 36px;
+}
+
+.button-group button {
+    padding: 8px 16px;
+    min-width: 150px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    position: relative;
+    transition: all 0.2s ease;
+    margin: 0;
+}
+
+.button-group button:first-child {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    padding-left: 20px;
+}
+
+.button-group button:last-child {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    padding-right: 20px;
+}
+
+.button-group button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.button-group button.active {
+    background: var(--primary);
+    color: #121212;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Button separators */
+.button-group button:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: var(--border);
+}
+
+.button-group button.active::after,
+.button-group button.active + button::after {
+    display: none;
+}
+
+/* App Close Button */
+#app-close-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 20px;
+}
+
+#app-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#app-close-btn i {
+    font-size: 1.2rem;
+}
+
+/* Footer */
+footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--footer-bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    z-index: 10;
+}
+
+footer .buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ==========================================================================
+   FORM ELEMENTS
+   ========================================================================== */
+
+/* Form Structure */
+.field {
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Form Labels */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+/* Input Fields */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-end);
+    color: var(--text);
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+/* Select Dropdown Styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23d4d4d4' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+/* Special Input Components */
+.shortcode-input {
+    display: flex;
+    align-items: center;
+    background: var(--bg-end);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.shortcode-input input {
+    border: none;
+    background: transparent;
+    flex: 1;
+}
+
+.shortcode-prefix, 
+.shortcode-suffix {
+    padding: 0.75rem;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.filename-edit {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-right: 10px;
+    font-size: 14px;
+    width: 200px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Form Hints */
+.hint {
+    font-size: 0.8rem;
+    color: var(--text);
+    opacity: 0.7;
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   BUTTON COMPONENTS
+   ========================================================================== */
+
+/* Standard Buttons */
+.standard-btn,
+.btn-save {
+    padding: 8px 16px;
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.standard-btn:hover:not(:disabled),
+.btn-save:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.standard-btn:disabled,
+.btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.standard-btn i,
+.btn-save i {
+    font-size: 1rem;
+}
+
+/* Delete Buttons */
+.delete-btn,
+.btn-delete {
+    padding: 8px 16px;
+    background: transparent;
+    border: 2px solid var(--error);
+    color: var(--error);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover:not(:disabled),
+.btn-delete:hover:not(:disabled) {
+    background: var(--error);
+    color: white;
+}
+
+.delete-btn:disabled,
+.btn-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.delete-btn i,
+.btn-delete i {
+    font-size: 1rem;
+}
+
+/* Toggle Buttons */
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+/* ==========================================================================
+   FILE LIST COMPONENT
+   ========================================================================== */
+.file-list {
+    width: 250px;
+    min-width: 250px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-end);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.file-list-content {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px;
+}
+
+/* File Items */
+.file-item {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-item:hover {
+    background: var(--hover-bg);
+}
+
+.file-item.active {
+    background: var(--primary);
+    color: #121212;
+}
+
+.file-item.active i {
+    color: #121212 !important;
+}
+
+.file-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* New File Button */
+.file-item.new-file {
+    background: var(--primary);
+    color: #121212;
+    margin: 10px;
+    padding: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-item.new-file:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+/* File Type Icons */
+.file-item i.fa-file-image { color: #4CAF50; }
+.file-item i.fa-file-audio { color: #2196F3; }
+.file-item i.fa-file-video { color: #F44336; }
+.file-item i.fa-file-alt { color: #9E9E9E; }
+.file-item i.fa-file-code { color: #FF9800; }
+
+/* File Meta Information */
+.file-item-meta {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-left: 5px;
+}
+
+/* ==========================================================================
+   EDITOR COMPONENTS
+   ========================================================================== */
+
+/* Editor Container */
+.editor-container {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.editor-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 20px;
+    padding-bottom: 76px;
+    overflow-y: auto;
+}
+
+/* CodeMirror Integration */
+.CodeMirror {
+    flex: 1;
+    height: auto !important;
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.CodeMirror-scroll {
+    min-height: 200px;
+}
+
+.CodeMirror-gutters {
+    background: var(--bg-end) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+.CodeMirror-linenumber {
+    color: #666 !important;
+}
+
+/* Content Editor Areas */
+.code-editor,
+.content-editor {
+    position: relative;
+}
+
+.text-editor {
+    margin-top: 20px;
+}
+
+.editor-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ==========================================================================
+   EDITOR TOOLBAR
+   ========================================================================== */
+.editor-toolbar {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 999;
+    display: flex;
+    gap: 5px;
+    background: var(--bg-end);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Toolbar Dropdowns */
+.editor-toolbar .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.editor-toolbar .dropdown .toolbar-btn {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.editor-toolbar .dropdown .toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown Content */
+.editor-toolbar .dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 20;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.editor-toolbar .dropdown.active .dropdown-content {
+    display: block;
+}
+
+/* Dropdown Items */
+.editor-toolbar .dropdown-content .dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.editor-toolbar .dropdown-content .dropdown-item:hover {
+    background: var(--bg-end);
+}
+
+.editor-toolbar .dropdown-content .dropdown-item i {
+    color: var(--primary);
+    font-size: 0.9rem;
+    width: 16px;
+    text-align: center;
+}
+
+/* Dropdown Headers and Separators */
+.editor-toolbar .dropdown-content .dropdown-header {
+    padding: 8px 12px;
+    font-weight: bold;
+    color: var(--primary);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 5px;
+}
+
+.editor-toolbar .dropdown-content .dropdown-subheader {
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--text);
+    opacity: 0.7;
+    cursor: default;
+}
+
+.editor-toolbar .dropdown-content .dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 5px 0;
+}
+
+/* ==========================================================================
+   FRONT MATTER COMPONENT
+   ========================================================================== */
+
+/* Front Matter Section */
+.front-matter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.front-matter-content {
+    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+    overflow: hidden;
+    max-height: 500px;
+    opacity: 1;
+}
+
+.front-matter-collapsed .front-matter-content {
+    max-height: 0;
+    opacity: 0;
+}
+
+.front-matter-collapsed .toggle-btn i {
+    transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   FILE UPLOAD & PREVIEW COMPONENTS
+   ========================================================================== */
+
+/* Dropzone Styling */
+.dropzone {
+    position: relative;
+    height: 100%;
+    min-height: 300px;
+    text-align: center;
+    background: var(--bg-end);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.dz-message {
+    color: var(--text);
+    position: relative;
+    z-index: 1;
+    background: var(--bg-end);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dz-message i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--primary);
+}
+
+.dz-message h3 {
+    margin: 0 0 8px 0;
+}
+
+.dz-message p {
+    margin: 0 0 20px 0;
+    color: #888;
+}
+
+.dz-message .browse-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #FFD700;
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.dz-message .browse-btn:hover {
+    background: #FFC800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dz-message .browse-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* File Preview */
+.file-preview {
+    background: var(--bg-end);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.preview-header h3 {
+    margin: 0;
+    color: var(--text);
+}
+
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.preview-content {
+    margin-bottom: 20px;
+    background: var(--bg);
+    border-radius: 4px;
+}
+
+.preview-content img,
+.preview-content video,
+.preview-content audio {
+    max-width: 100%;
+    border-radius: 4px;
+}
+
+.no-preview {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   MODAL COMPONENTS
+   ========================================================================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--bg);
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* File Browser for Modals */
+.file-browser {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.file-browser-item {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-browser-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.file-browser-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+}
+
+.file-browser-item .filename {
+    padding: 8px;
+    font-size: 0.8rem;
+    background: var(--bg-end);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   STATUS & NOTIFICATION ELEMENTS
+   ========================================================================== */
+.loading, 
+.no-items, 
+.error, 
+.loading-state, 
+.no-files {
+    padding: 20px;
+    text-align: center;
+}
+
+.error {
+    color: var(--error);
+}
+
+.loading-state i, 
+.no-files i {
+    margin-right: 8px;
+}
+
+.no-files {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.no-files i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.no-files p {
+    margin: 8px 0;
+}
+
+.no-files .hint {
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+/* ==========================================================================
+   SECTION TRANSITIONS & ANIMATIONS
+   ========================================================================== */
+.section-content {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    display: none;
+}
+
+.section-content.active {
+    opacity: 1;
+    transform: translateY(0);
+    display: block;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+/* Mobile and Tablet Adjustments */
+@media (max-width: 768px) {
+    .button-group {
+        max-width: calc(100vw - 60px);
+    }
+    
+    .button-group button {
+        min-width: 120px;
+        font-size: 0.8rem;
+    }
+    
+    .file-list {
+        width: 200px;
+        min-width: 200px;
+    }
+    
+    .editor-form {
+        padding: 15px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 0 10px;
+    }
+    
+    .button-group button {
+        min-width: 100px;
+        padding: 6px 12px;
+    }
+    
+    .file-list {
+        width: 180px;
+        min-width: 180px;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    header,
+    footer,
+    .file-list,
+    .editor-toolbar {
+        display: none;
+    }
+    
+    .editor-container {
+        position: static;
+        padding: 0;
+    }
+} 

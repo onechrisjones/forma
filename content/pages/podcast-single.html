@@ -1,0 +1,1050 @@
+<!--META
+slug: podcast-single-template
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ episode.title }} | Forma</title>
+    <meta name="description" content="{{ episode.description }}">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwcHgiIGhlaWdodD0iMjgwcHgiIHZpZXdCb3g9IjAgMCA0MDAgMjgwIj48ZyBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0iI2ZjYmUzNCIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMCwwIEw0MDAsMCBMMzIwLDgwIEwwLDgwIEwwLDAgWiI+PC9wYXRoPjxwYXRoIGQ9Ik0wLDEwMCBMMzAwLDEwMCBMMjIwLDE4MCBMMCwxODAgTDAsMTAwIFoiPjwvcGF0aD48cGF0aCBkPSJNMCwyMDAgTDgwLDIwMCBMMCwyODAgTDAsMjAwIFoiPjwvcGF0aD48L2c+PC9zdmc+">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts: Chakra Petch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary: #fcbe34;
+            --primary-end: #e6a912;
+            --primary-dark: #d99e00;
+            --bg: #1e1e1e;
+            --bg-end: #252526;
+            --text: #d4d4d4;
+            --text-muted: #888888;
+            --border: #3e3e42;
+            --hover-bg: rgba(255, 255, 255, 0.1);
+            --error: #f44336;
+            --error-end: #d32f2f;
+            --footer-bg: #2d2d2d;
+            --footer-bg-end: #252526;
+            --accent: #fcbe34;
+            --accent-hover: #e6a912;
+            --accent-text: #121212;
+            --font-family: 'Chakra Petch', sans-serif;
+        }
+
+        /* Apply Chakra Petch to all elements */
+        * {
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        .navbar {
+            background-color: var(--bg-end);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar-brand {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.75rem;
+        }
+
+        .nav-link {
+            color: var(--text);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .navbar-brand svg {
+            fill: var(--primary);
+            color: var(--primary);
+        }
+
+        .hero-section {
+            background: var(--bg);
+            padding: 4rem 0 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hero animated background */
+        .hero-bg {
+            animation: slide 8s ease-in-out infinite alternate;
+            background-image: linear-gradient(-60deg, rgba(252, 190, 52, 0.1) 50%, rgba(30, 30, 30, 0.8) 50%);
+            bottom: 0;
+            left: -50%;
+            opacity: 0.5;
+            position: absolute;
+            right: -50%;
+            top: 0;
+            z-index: 0;
+        }
+
+        .hero-bg.bg1 {
+            /* Default styles already applied above */
+        }
+
+        .hero-bg.bg2 {
+            animation-direction: alternate-reverse;
+            animation-duration: 10s;
+            background-image: linear-gradient(-60deg, rgba(30, 30, 30, 0.9) 50%, rgba(217, 158, 0, 0.1) 50%);
+        }
+
+        .hero-bg.bg3 {
+            animation-duration: 12s;
+            background-image: linear-gradient(-60deg, rgba(37, 37, 38, 0.8) 50%, rgba(230, 169, 18, 0.1) 50%);
+        }
+
+        @keyframes slide {
+            0% {
+                transform: translateX(-15%);
+            }
+            100% {
+                transform: translateX(15%);
+            }
+        }
+
+        .episode-title {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 2.5rem;
+            line-height: 1.1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .episode-meta {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin: 1.5rem 0;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .episode-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .episode-cover {
+            width: 240px;
+            height: 240px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+            border: 2px solid var(--primary);
+        }
+
+        .content-section {
+            background-color: var(--bg-end);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: -2rem;
+            position: relative;
+            z-index: 2;
+            border: 1px solid var(--border);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .media-player {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .now-playing {
+            display: flex;
+            align-items: center;
+        }
+        
+        .now-playing .badge {
+            background-color: var(--primary);
+            color: var(--accent-text);
+            font-weight: 500;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .volume-slider-container {
+            width: 80px;
+        }
+        
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        
+        .volume-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .waveform-container {
+            height: 60px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .waveform-placeholder {
+            display: flex;
+            height: 100%;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+        }
+        
+        .waveform-placeholder::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 3px,
+                rgba(252, 190, 52, 0.2) 3px,
+                rgba(252, 190, 52, 0.2) 5px
+            );
+            mask-image: linear-gradient(
+                to right,
+                transparent 0%,
+                rgba(0, 0, 0, 1) 5%,
+                rgba(0, 0, 0, 1) 95%,
+                transparent 100%
+            ), 
+            repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 10px,
+                rgba(0, 0, 0, 0.3) 10px,
+                rgba(0, 0, 0, 0.3) 12px
+            );
+            mask-size: 100% 100%, 100% 100%;
+            mask-repeat: no-repeat, no-repeat;
+            mask-position: center;
+            mask-composite: intersect;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .play-pause-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: var(--accent-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .play-pause-btn:hover {
+            background-color: var(--primary-end);
+            transform: scale(1.05);
+        }
+
+        .player-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .player-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-container {
+            position: relative;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 0 0.5rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 30%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .progress-handle {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+        }
+
+        .playback-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .download-btn {
+            background-color: var(--primary);
+            color: var(--accent-text);
+            border: none;
+        }
+
+        .download-btn:hover {
+            background-color: var(--primary-end);
+            color: var(--accent-text);
+        }
+
+        .episode-content {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+        }
+
+        .show-notes {
+            margin-bottom: 2.5rem;
+        }
+
+        .show-notes h2 {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .show-notes a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .show-notes a:hover {
+            color: var(--primary-end);
+            text-decoration: underline;
+        }
+
+        .keywords {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+
+        .keyword {
+            display: inline-block;
+            background-color: rgba(252, 190, 52, 0.15);
+            color: var(--primary);
+            padding: 0.35rem 0.9rem;
+            border-radius: 2rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(252, 190, 52, 0.3);
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .keyword:hover {
+            background-color: rgba(252, 190, 52, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .back-to-podcast {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: var(--primary);
+            background-color: rgba(252, 190, 52, 0.1);
+            text-decoration: none;
+            padding: 0.7rem 1.3rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            border: 1px solid rgba(252, 190, 52, 0.2);
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .back-to-podcast:hover {
+            background-color: rgba(252, 190, 52, 0.2);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer {
+            background-color: var(--footer-bg);
+            padding: 3rem 0 2rem;
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        .footer-title {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .footer-link {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-logo {
+            width: 40px;
+            height: 60px;
+            margin-right: 10px;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <svg width="32" height="24" viewBox="0 0 400 280" class="me-2">
+                    <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+                        <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+                        <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+                        <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+                    </g>
+                </svg>
+                Forma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/blog">Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/podcast">Podcast</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="hero-bg bg1"></div>
+        <div class="hero-bg bg2"></div>
+        <div class="hero-bg bg3"></div>
+        <div class="container position-relative">
+            {% if episode.episode_art %}
+                <img src="/uploads/{{ episode.episode_art }}" alt="{{ episode.title }}" class="episode-cover">
+            {% elseif podcast.cover_art %}
+                <img src="/uploads/{{ podcast.cover_art }}" alt="{{ podcast.title }}" class="episode-cover">
+            {% endif %}
+            
+            <h1 class="episode-title">{{ episode.title }}</h1>
+            
+            <div class="player-container">
+                <div class="media-player">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="now-playing">
+                            <span class="badge bg-primary">Now Playing</span>
+                        </div>
+                        <div class="volume-control">
+                            <button class="player-btn" id="muteBtn" title="Mute">
+                                <i class="fas fa-volume-up" id="volumeIcon"></i>
+                            </button>
+                            <div class="volume-slider-container">
+                                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="waveform-container mb-2" id="waveform">
+                        <div class="waveform-placeholder"></div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="progress-container" id="progressContainer">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-handle"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="playback-info mb-3">
+                        <span id="currentTime">00:00</span>
+                        <span id="duration">{{ episode.duration }}</span>
+                    </div>
+                    
+                    <div class="player-controls mb-3">
+                        <button class="player-btn" id="backwardBtn" title="Previous Episode">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button class="player-btn" title="Rewind 15s">
+                            <i class="fas fa-redo-alt fa-flip-horizontal"></i>
+                        </button>
+                        <button class="play-pause-btn" id="playPauseBtn" title="Play/Pause">
+                            <i class="fas fa-play" id="playIcon"></i>
+                        </button>
+                        <button class="player-btn" title="Forward 15s">
+                            <i class="fas fa-redo-alt"></i>
+                        </button>
+                        <button class="player-btn" id="forwardBtn" title="Next Episode">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                    
+                    <audio id="audioPlayer" src="/uploads/{{ episode.audio_file }}"></audio>
+                    
+                    <div class="action-buttons">
+                        <a href="/uploads/{{ episode.audio_file }}" download class="action-btn download-btn">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        <button class="action-btn" id="speedToggle">
+                            <i class="fas fa-tachometer-alt"></i> Speed: 1.0x
+                        </button>
+                        <button class="action-btn" id="loopBtn">
+                            <i class="fas fa-sync-alt"></i> Loop
+                        </button>
+                        <button class="action-btn" id="shareBtn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="episode-meta">
+                <span>
+                    <i class="fas fa-podcast"></i> Episode {{ episode.episode_number }}
+                </span>
+                <span>
+                    <i class="fas fa-hashtag"></i> Season {{ episode.season_number }}
+                </span>
+                <span>
+                    <i class="far fa-calendar-alt"></i> {{ episode.publish_date }}
+                </span>
+                <span>
+                    <i class="far fa-clock"></i> {{ episode.duration }}
+                </span>
+                {% if episode.explicit == "true" %}
+                    <span>
+                        <i class="fas fa-exclamation-circle"></i> Explicit
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="content-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="episode-content">
+                        {{ episode.description|raw }}
+                    </div>
+                    
+                    {% if episode.show_notes %}
+                        <div class="show-notes">
+                            <h2>Show Notes</h2>
+                            {{ episode.show_notes_html|raw }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if episode.keywords %}
+                        <div class="keywords">
+                            {% for keyword in episode.keywords|split(',') %}
+                                {% if keyword|trim != '' %}
+                                    <span class="keyword">{{ keyword|trim }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <a href="/podcast" class="back-to-podcast">
+                        <i class="fas fa-arrow-left"></i> Back to All Episodes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row gy-4">
+                <div class="col-md-4">
+                    <h4 class="footer-title d-flex align-items-center">
+                        <svg width="40" height="28" viewBox="0 0 400 280" class="footer-logo">
+                            <g stroke="none" stroke-width="1" fill="currentColor" fill-rule="evenodd">
+                                <path d="M0,0 L400,0 L320,80 L0,80 L0,0 Z"></path>
+                                <path d="M0,100 L300,100 L220,180 L0,180 L0,100 Z"></path>
+                                <path d="M0,200 L80,200 L0,280 L0,200 Z"></path>
+                            </g>
+                        </svg>
+                        Forma
+                    </h4>
+                    <p>The flat-file CMS that doesn't suck. Blazing-fast, no database needed.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="footer-title">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="footer-link">Home</a></li>
+                        <li><a href="/blog" class="footer-link">Blog</a></li>
+                        <li><a href="/podcast" class="footer-link">Podcast</a></li>
+                        <li><a href="/#features" class="footer-link">Features</a></li>
+                        <li><a href="/#why-flat-file" class="footer-link">Why Flat-File</a></li>
+                        <li><a href="/admin" class="footer-link">Admin Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-5">
+                    <h5 class="footer-title">Support</h5>
+                    <p>Hit a snag? We've got your back:</p>
+                    <ul class="list-unstyled">
+                        <li>• Run /checklist.php to check your setup</li>
+                        <li>• Dig into the docs</li>
+                        <li>• Open a GitHub issue if you need help</li>
+                    </ul>
+                    <p class="mt-3">
+                        <a href="https://github.com/onechrisjones/forma" class="footer-link me-3"><i class="fab fa-github"></i> GitHub</a>
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: var(--border);">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">Crafted by Chris Jones. MIT Licensed.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">Shoutout to the open-source crew for the tools that make Forma a reality.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Audio Player Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const audioPlayer = document.getElementById('audioPlayer');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const playIcon = document.getElementById('playIcon');
+            const progressBar = document.getElementById('progressBar');
+            const progressContainer = document.getElementById('progressContainer');
+            const currentTimeEl = document.getElementById('currentTime');
+            const speedToggle = document.getElementById('speedToggle');
+            const shareBtn = document.getElementById('shareBtn');
+            const loopBtn = document.getElementById('loopBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const volumeIcon = document.getElementById('volumeIcon');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const backwardBtn = document.getElementById('backwardBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            const waveform = document.getElementById('waveform');
+            
+            // Generate waveform visualization
+            function generateWaveform() {
+                const waveformPlaceholder = document.querySelector('.waveform-placeholder');
+                
+                // Create a set of bars to simulate a waveform
+                waveformPlaceholder.innerHTML = '';
+                
+                // Create pseudo-random waveform bars
+                const barCount = 100;
+                for (let i = 0; i < barCount; i++) {
+                    const bar = document.createElement('div');
+                    bar.classList.add('waveform-bar');
+                    bar.style.height = `${10 + Math.random() * 40}px`;
+                    bar.style.width = '2px';
+                    bar.style.background = 'rgba(252, 190, 52, 0.6)';
+                    bar.style.marginRight = '1px';
+                    
+                    waveformPlaceholder.appendChild(bar);
+                }
+            }
+            
+            // Initialize the player
+            function initPlayer() {
+                generateWaveform();
+                
+                // Set initial volume
+                audioPlayer.volume = volumeSlider.value;
+                
+                // Check if audioPlayer duration is available
+                if (!isNaN(audioPlayer.duration)) {
+                    updateDurationDisplay();
+                }
+            }
+            
+            // Update the duration display
+            function updateDurationDisplay() {
+                const totalMinutes = Math.floor(audioPlayer.duration / 60);
+                const totalSeconds = Math.floor(audioPlayer.duration % 60);
+                document.getElementById('duration').textContent = 
+                    `${totalMinutes.toString().padStart(2, '0')}:${totalSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update current time display
+            function updateTimeDisplay() {
+                const minutes = Math.floor(audioPlayer.currentTime / 60);
+                const seconds = Math.floor(audioPlayer.currentTime % 60);
+                currentTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Playback speeds
+            const speeds = [1.0, 1.25, 1.5, 1.75, 2.0, 0.75, 0.5];
+            let currentSpeedIndex = 0;
+            
+            // State tracking
+            let isLooping = false;
+            
+            // Play/Pause toggle
+            playPauseBtn.addEventListener('click', function() {
+                if (audioPlayer.paused) {
+                    const playPromise = audioPlayer.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(_ => {
+                            playIcon.classList.remove('fa-play');
+                            playIcon.classList.add('fa-pause');
+                        }).catch(error => {
+                            console.log('Playback prevented: ', error);
+                        });
+                    }
+                } else {
+                    audioPlayer.pause();
+                    playIcon.classList.remove('fa-pause');
+                    playIcon.classList.add('fa-play');
+                }
+            });
+            
+            // Update progress bar as audio plays
+            audioPlayer.addEventListener('timeupdate', function() {
+                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressBar.style.width = `${progress}%`;
+                updateTimeDisplay();
+                
+                // Highlight the current position in the waveform
+                const waveBars = document.querySelectorAll('.waveform-bar');
+                if (waveBars.length > 0) {
+                    const position = Math.floor((audioPlayer.currentTime / audioPlayer.duration) * waveBars.length);
+                    waveBars.forEach((bar, index) => {
+                        if (index <= position) {
+                            bar.style.background = 'rgba(252, 190, 52, 0.8)';
+                        } else {
+                            bar.style.background = 'rgba(252, 190, 52, 0.3)';
+                        }
+                    });
+                }
+            });
+            
+            // Click on progress bar to seek
+            progressContainer.addEventListener('click', function(e) {
+                const clickPosition = (e.offsetX / progressContainer.offsetWidth);
+                const seekTime = clickPosition * audioPlayer.duration;
+                audioPlayer.currentTime = seekTime;
+                
+                // Update waveform
+                const waveBars = document.querySelectorAll('.waveform-bar');
+                const position = Math.floor(clickPosition * waveBars.length);
+                waveBars.forEach((bar, index) => {
+                    if (index <= position) {
+                        bar.style.background = 'rgba(252, 190, 52, 0.8)';
+                    } else {
+                        bar.style.background = 'rgba(252, 190, 52, 0.3)';
+                    }
+                });
+            });
+            
+            // Speed toggle
+            speedToggle.addEventListener('click', function() {
+                currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+                const newSpeed = speeds[currentSpeedIndex];
+                audioPlayer.playbackRate = newSpeed;
+                speedToggle.innerHTML = `<i class="fas fa-tachometer-alt"></i> Speed: ${newSpeed.toFixed(1)}x`;
+            });
+            
+            // Loop toggle
+            loopBtn.addEventListener('click', function() {
+                isLooping = !isLooping;
+                audioPlayer.loop = isLooping;
+                
+                if (isLooping) {
+                    loopBtn.classList.add('active-btn');
+                    loopBtn.style.background = 'rgba(252, 190, 52, 0.3)';
+                } else {
+                    loopBtn.classList.remove('active-btn');
+                    loopBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+                }
+            });
+            
+            // Mute toggle
+            muteBtn.addEventListener('click', function() {
+                audioPlayer.muted = !audioPlayer.muted;
+                
+                if (audioPlayer.muted) {
+                    volumeIcon.classList.remove('fa-volume-up');
+                    volumeIcon.classList.add('fa-volume-mute');
+                } else {
+                    volumeIcon.classList.remove('fa-volume-mute');
+                    volumeIcon.classList.add('fa-volume-up');
+                }
+            });
+            
+            // Volume control
+            volumeSlider.addEventListener('input', function() {
+                audioPlayer.volume = this.value;
+                
+                // Update volume icon based on level
+                if (this.value == 0) {
+                    volumeIcon.className = 'fas fa-volume-off';
+                } else if (this.value < 0.5) {
+                    volumeIcon.className = 'fas fa-volume-down';
+                } else {
+                    volumeIcon.className = 'fas fa-volume-up';
+                }
+            });
+            
+            // Rewind/Forward buttons
+            document.querySelectorAll('.player-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.title === 'Rewind 15s') {
+                        audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 15);
+                    } else if (this.title === 'Forward 15s') {
+                        audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 15);
+                    } else if (this.title === 'Previous Episode') {
+                        // Handle previous episode navigation if applicable
+                        console.log('Previous episode requested');
+                    } else if (this.title === 'Next Episode') {
+                        // Handle next episode navigation if applicable
+                        console.log('Next episode requested');
+                    }
+                });
+            });
+            
+            // Share button
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: '{{ episode.title }}',
+                        text: '{{ episode.description|striptags|slice(0, 100)|default("Listen to this podcast episode") }}...',
+                        url: window.location.href
+                    })
+                    .catch(error => console.log('Error sharing:', error));
+                } else {
+                    // Fallback for browsers that don't support the Web Share API
+                    const shareUrl = window.location.href;
+                    const tempInput = document.createElement('input');
+                    document.body.appendChild(tempInput);
+                    tempInput.value = shareUrl;
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    
+                    // Create a tooltip
+                    const tooltip = document.createElement('div');
+                    tooltip.textContent = 'Link copied to clipboard!';
+                    tooltip.style.position = 'fixed';
+                    tooltip.style.top = '50%';
+                    tooltip.style.left = '50%';
+                    tooltip.style.transform = 'translate(-50%, -50%)';
+                    tooltip.style.padding = '10px 15px';
+                    tooltip.style.background = 'var(--primary)';
+                    tooltip.style.color = 'var(--accent-text)';
+                    tooltip.style.borderRadius = '4px';
+                    tooltip.style.zIndex = '9999';
+                    document.body.appendChild(tooltip);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(tooltip);
+                    }, 2000);
+                }
+            });
+            
+            // Audio events
+            audioPlayer.addEventListener('loadedmetadata', function() {
+                updateDurationDisplay();
+                initPlayer();
+            });
+            
+            audioPlayer.addEventListener('ended', function() {
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+                
+                if (!isLooping) {
+                    // Auto-play next episode if available
+                    if (forwardBtn) {
+                        // Simulate next episode click
+                        // forwardBtn.click();
+                    }
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Space bar to play/pause
+                if (e.code === 'Space' && e.target === document.body) {
+                    e.preventDefault();
+                    playPauseBtn.click();
+                }
+                
+                // Left arrow to rewind
+                if (e.code === 'ArrowLeft') {
+                    audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5);
+                }
+                
+                // Right arrow to forward
+                if (e.code === 'ArrowRight') {
+                    audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 5);
+                }
+                
+                // M to mute
+                if (e.code === 'KeyM') {
+                    muteBtn.click();
+                }
+            });
+            
+            // Initialize player if possible
+            if (!isNaN(audioPlayer.duration)) {
+                initPlayer();
+            } else {
+                // If duration isn't available yet, initialize wavform only
+                generateWaveform();
+            }
+        });
+    </script>
+</body>
+</html> 
