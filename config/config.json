@@ -2,15 +2,10 @@
     "site": {
         "title": "Forma",
         "description": "A modern flat file CMS with powerful features and texty content management",
-        "url": "http:\/\/localhost:8888",
-        "timezone": "America\/New_York",
+        "url": "https:\/\/forma-cms.me",
+        "timezone": "America\/Chicago",
         "language": "en",
         "default_author": "Admin"
-    },
-    "admin": {
-        "username": "admin",
-        "password": "admin",
-        "email": "admin@example.com"
     },
     "content": {
         "pages_dir": "content\/pages",
@@ -33,7 +28,7 @@
         "category": "Kids & Family",
         "explicit": "no",
         "language": "en-us",
-        "feed_url": "http:\/\/localhost:8888\/feeds\/podcast.xml",
+        "feed_url": "https:\/\/forma-cms.me\/feeds\/podcast.xml",
         "image": "cover.png",
         "subcategory": "Stories for Kids"
     },
@@ -50,11 +45,36 @@
             "jpeg",
             "png",
             "gif",
+            "svg",
+            "webp",
             "pdf",
+            "doc",
+            "docx",
+            "txt",
+            "rtf",
+            "md",
             "mp3",
             "m4a",
-            "mp4"
+            "wav",
+            "ogg",
+            "mp4",
+            "webm",
+            "mov",
+            "avi",
+            "css",
+            "js",
+            "json",
+            "xml",
+            "csv",
+            "zip"
         ],
         "max_upload_size": 52428800
+    },
+    "cache": {
+        "enabled": false,
+        "ttl": 3600,
+        "excluded_paths": [
+            "\/admin"
+        ]
     }
 }

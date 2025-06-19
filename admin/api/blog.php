@@ -168,11 +168,13 @@ function generateRSSFeed() {
         // Get site settings
         $configFile = dirname(dirname(dirname(__FILE__))) . '/config/config.json';
         if (!file_exists($configFile)) {
+            error_log("Blog RSS generation failed: config file not found");
             return false;
         }
         
         $config = json_decode(file_get_contents($configFile), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("Blog RSS generation failed: invalid JSON in config file");
             return false;
         }
         
@@ -188,7 +190,7 @@ function generateRSSFeed() {
         
         // Start RSS feed
         $rss = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $rss .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">' . "\n";
+        $rss .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">' . "\n";
         $rss .= '<channel>' . "\n";
         
         // Ensure all values are strings
@@ -209,14 +211,23 @@ function generateRSSFeed() {
         
         // Get all blog posts
         $posts = [];
+        $postsFound = 0;
+        
+        // Log start of blog post processing
+        error_log("Starting to process blog posts for RSS feed");
+        
         foreach (scandir($blogDir) as $file) {
             if ($file === '.' || $file === '..' || $file === '.DS_Store') continue;
             if (!preg_match('/\.md$/i', $file)) continue;
             
             $content = file_get_contents($blogDir . '/' . $file);
-            if ($content === false) continue;
+            if ($content === false) {
+                error_log("Could not read blog file: " . $file);
+                continue;
+            }
             
             $parsed = parseMarkdownWithFrontMatter($content);
+            $postsFound++;
             
             if (isset($parsed['frontMatter']['date'])) {
                 // Validate and correct front matter fields
@@ -225,6 +236,18 @@ function generateRSSFeed() {
                 // Ensure date is a string
                 if (isset($frontMatter['date']) && is_array($frontMatter['date'])) {
                     $frontMatter['date'] = implode(' ', $frontMatter['date']);
+                }
+                
+                // Skip future posts
+                $pubDate = $frontMatter['date'] ?? '';
+                if (is_array($pubDate)) {
+                    $pubDate = implode(' ', $pubDate);
+                }
+                
+                $pubTimestamp = strtotime($pubDate) ?: time();
+                if ($pubTimestamp > time()) {
+                    error_log("Skipping future blog post: " . $file . " (date: " . $pubDate . ")");
+                    continue;
                 }
                 
                 // Ensure categories is an array
@@ -242,8 +265,13 @@ function generateRSSFeed() {
                     'frontMatter' => $frontMatter,
                     'content' => $parsed['content']
                 ];
+            } else {
+                error_log("Blog post missing date, skipping: " . $file);
             }
         }
+        
+        // Log number of posts found
+        error_log("Found $postsFound blog posts, " . count($posts) . " are valid for the feed");
         
         // Sort posts by date (newest first)
         usort($posts, function($a, $b) {
@@ -283,7 +311,8 @@ function generateRSSFeed() {
                 $post['frontMatter']['slug'] : 
                 pathinfo($post['file'], PATHINFO_FILENAME);
             
-            $postUrl = $siteUrl . '/blog/' . $slug;
+            // Ensure URL has full domain
+            $postUrl = rtrim($siteUrl, '/') . '/blog/' . $slug;
             $rss .= '<link>' . htmlspecialchars($postUrl) . '</link>' . "\n";
             $rss .= '<guid isPermaLink="true">' . htmlspecialchars($postUrl) . '</guid>' . "\n";
             
@@ -295,6 +324,7 @@ function generateRSSFeed() {
             
             $rss .= '<pubDate>' . date('r', strtotime($pubDate) ?: time()) . '</pubDate>' . "\n";
             
+            // Handle description and content
             if (isset($post['frontMatter']['description'])) {
                 $description = $post['frontMatter']['description'];
                 if (is_array($description)) $description = implode(' ', $description);
@@ -306,6 +336,27 @@ function generateRSSFeed() {
                 if (strlen($content) > $excerptLength) $excerpt .= '...';
                 $rss .= '<description>' . htmlspecialchars($excerpt) . '</description>' . "\n";
             }
+            
+            // Add full content with CDATA section
+            $fullContent = $post['content'];
+            
+            // Convert markdown to HTML if it's not already HTML
+            if (!preg_match('/<[a-z][\s\S]*>/i', $fullContent)) {
+                // Try to use Parsedown if available
+                if (class_exists('Parsedown')) {
+                    require_once dirname(dirname(dirname(__FILE__))) . '/lib/Parsedown.php';
+                    $parsedown = new Parsedown();
+                    $fullContent = $parsedown->text($fullContent);
+                    error_log("Converted markdown to HTML with Parsedown for post: " . $title);
+                } else {
+                    // Simple fallback for Markdown conversion
+                    $fullContent = nl2br(htmlspecialchars($fullContent));
+                    error_log("Parsedown not available, using fallback conversion for post: " . $title);
+                }
+            }
+            
+            // Check if content has HTML elements before adding content:encoded
+            $rss .= '<content:encoded><![CDATA[' . $fullContent . ']]></content:encoded>' . "\n";
             
             if (isset($post['frontMatter']['author'])) {
                 $author = $post['frontMatter']['author'];
@@ -335,12 +386,15 @@ function generateRSSFeed() {
         
         // Save RSS feed
         if (file_put_contents($feedsDir . '/blog.xml', $rss) === false) {
+            error_log("Failed to write blog RSS feed to " . $feedsDir . '/blog.xml');
             return false;
         }
         
+        error_log("Successfully generated blog RSS feed with " . count($posts) . " posts");
         return true;
     } catch (Exception $e) {
         // Don't throw the error as RSS generation is not critical
+        error_log("Exception in blog RSS generation: " . $e->getMessage());
         return false;
     }
 }
@@ -405,6 +459,26 @@ try {
                     'frontMatter' => $frontMatter,
                     'content' => $parsed['content']
                 ]);
+            } else if (isset($_GET['action']) && $_GET['action'] === 'regenerateFeed') {
+                // Special action to regenerate the feed
+                $success = generateRSSFeed();
+                if ($success) {
+                    // Return HTML for the debug view
+                    ob_clean();
+                    header('Content-Type: text/html');
+                    echo "<h1>Blog Feed Regeneration</h1>";
+                    echo "<p>✅ Blog feed successfully regenerated!</p>";
+                    echo "<p><a href='debug_blog.php'>Return to debug page</a></p>";
+                    exit;
+                } else {
+                    // Return HTML for the debug view
+                    ob_clean();
+                    header('Content-Type: text/html');
+                    echo "<h1>Blog Feed Regeneration</h1>";
+                    echo "<p>❌ Failed to regenerate blog feed. Check error logs for details.</p>";
+                    echo "<p><a href='debug_blog.php'>Return to debug page</a></p>";
+                    exit;
+                }
             } else {
                 // List all markdown files
                 if (!is_readable($blogDir)) {
@@ -441,6 +515,29 @@ try {
             break;
 
         case 'POST':
+            // Check if this is the regenerate feed action
+            if (isset($_GET['action']) && $_GET['action'] === 'regenerateFeed') {
+                // Special action to regenerate the feed
+                $success = generateRSSFeed();
+                if ($success) {
+                    // Return HTML for the debug view
+                    ob_clean();
+                    header('Content-Type: text/html');
+                    echo "<h1>Blog Feed Regeneration</h1>";
+                    echo "<p>✅ Blog feed successfully regenerated!</p>";
+                    echo "<p><a href='debug_blog.php'>Return to debug page</a></p>";
+                    exit;
+                } else {
+                    // Return HTML for the debug view
+                    ob_clean();
+                    header('Content-Type: text/html');
+                    echo "<h1>Blog Feed Regeneration</h1>";
+                    echo "<p>❌ Failed to regenerate blog feed. Check error logs for details.</p>";
+                    echo "<p><a href='debug_blog.php'>Return to debug page</a></p>";
+                    exit;
+                }
+            }
+            
             $filename = $_POST['filename'] ?? '';
             $content = $_POST['content'] ?? '';
             $use_separate_fields = isset($_POST['use_separate_fields']) && $_POST['use_separate_fields'] === 'true';

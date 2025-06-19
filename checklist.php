@@ -8,6 +8,17 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // ========================================
+// PASSWORD HASH GENERATOR TOOL
+// ========================================
+
+$password_tool_result = '';
+if (isset($_POST['generate_hash']) && !empty($_POST['password'])) {
+    $new_password = $_POST['password'];
+    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+    $password_tool_result = $hashed_password;
+}
+
+// ========================================
 // SYSTEM CHECKS
 // ========================================
 
@@ -84,6 +95,39 @@ $checks[] = [
     'message' => $rewrite_ok ? 'Enabled' : 'May not be enabled'
 ];
 if (!$rewrite_ok) $critical_failed = true;
+
+// ========================================
+// SECURITY CHECKS
+// ========================================
+
+// Admin Password Check
+$users_file = __DIR__ . '/config/users.json';
+$password_changed = false;
+$password_check_message = 'Unable to check';
+
+if (file_exists($users_file)) {
+    $users_data = json_decode(file_get_contents($users_file), true);
+    if ($users_data && isset($users_data['users']['admin']['password'])) {
+        $stored_hash = $users_data['users']['admin']['password'];
+        // Check if the stored hash corresponds to the default password 'password'
+        $default_password_used = password_verify('password', $stored_hash);
+        $password_changed = !$default_password_used;
+        $password_check_message = $password_changed ? 'Default password has been changed (Good!)' : 'Still using default password (Change required!)';
+    } else {
+        $password_check_message = 'Invalid users.json structure';
+    }
+} else {
+    $password_check_message = 'config/users.json file not found';
+}
+
+$checks[] = [
+    'group' => 'Security',
+    'name' => 'Admin Password',
+    'status' => $password_changed,
+    'critical' => true,
+    'message' => $password_check_message
+];
+if (!$password_changed) $critical_failed = true;
 
 // Optional Checks
 $optional_extensions = ['gd', 'zip', 'curl'];
@@ -443,6 +487,87 @@ $overall_status = !$critical_failed;
                 font-size: 1rem;
             }
         }
+
+        .password-tool-content {
+            padding: 1.5rem;
+        }
+
+        .password-input-container {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--primary);
+        }
+
+        .form-control {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 0.75rem;
+            padding-right: 3rem; /* Make space for toggle button */
+        }
+
+        .form-control:focus {
+            background-color: var(--bg);
+            border-color: var(--primary);
+            color: var(--text);
+            box-shadow: 0 0 0 0.2rem rgba(252, 190, 52, 0.25);
+        }
+
+        .btn-secondary {
+            background-color: var(--border);
+            border-color: var(--border);
+            color: var(--text);
+            border-radius: 6px;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--text-muted);
+            border-color: var(--text-muted);
+            color: var(--bg);
+        }
+
+        .hash-output {
+            background-color: var(--bg);
+            border: 1px solid var(--success);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            margin-top: 1rem;
+        }
+
+        .copy-btn {
+            background-color: var(--success);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--success-end);
+        }
     </style>
 </head>
 <body>
@@ -508,6 +633,7 @@ $overall_status = !$critical_failed;
                 'PHP' => 'fa-code',
                 'Filesystem' => 'fa-folder',
                 'Server' => 'fa-server',
+                'Security' => 'fa-shield-alt',
                 'Optional' => 'fa-puzzle-piece'
             ];
             $group_icon = $group_icons[$group_name] ?? 'fa-cog';
@@ -519,7 +645,7 @@ $overall_status = !$critical_failed;
                     <div class="group-status <?php echo $group_critical_failures ? 'fail' : 'pass'; ?>"></div>
                 </div>
                 <?php foreach ($group_checks as $check): ?>
-                    <?php if (!$check['status'] || $group_name === 'PHP'): // Always show PHP, only show others if failed ?>
+                    <?php if (!$check['status'] || $group_name === 'PHP' || $group_name === 'Security'): // Always show PHP and Security, only show others if failed ?>
                         <div class="check-item <?php echo !$check['status'] ? 'failed' : ''; ?>">
                             <div class="check-status <?php 
                                 if ($check['status']) echo 'pass';
@@ -533,6 +659,55 @@ $overall_status = !$critical_failed;
                 <?php endforeach; ?>
             </div>
         <?php endforeach; ?>
+        
+        <!-- Password Hash Generator Tool -->
+        <div class="check-group">
+            <div class="group-header">
+                <i class="fas fa-key group-icon"></i>
+                Password Hash Generator
+                <div class="group-status pass"></div>
+            </div>
+            <div class="password-tool-content">
+                <p class="text-muted mb-3">Generate a secure hash for your admin password to update in config/users.json</p>
+                
+                <form method="post" class="mb-3">
+                    <div class="mb-3">
+                        <div class="password-input-container">
+                            <input type="text" 
+                                   id="passwordInput"
+                                   name="password" 
+                                   class="form-control" 
+                                   placeholder="Enter your desired password"
+                                   required>
+                            <button type="button" 
+                                    class="password-toggle-btn" 
+                                    onclick="togglePasswordVisibility()">
+                                <i class="fas fa-eye-slash" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <button type="submit" name="generate_hash" class="btn btn-secondary w-100">
+                            <i class="fas fa-cog me-1"></i>Generate Hash
+                        </button>
+                    </div>
+                </form>
+                
+                <?php if (!empty($password_tool_result)): ?>
+                    <div class="hash-output">
+                        <strong>Generated Hash:</strong><br>
+                        <span id="hashResult"><?php echo htmlspecialchars($password_tool_result); ?></span>
+                        <button class="copy-btn" onclick="copyHash()">
+                            <i class="fas fa-copy me-1"></i>Copy Hash
+                        </button>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions:</strong> Copy the hash above and replace the "password" value for the admin user in your config/users.json file.
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
         
         <!-- Actions -->
         <div class="actions">
@@ -567,5 +742,56 @@ $overall_status = !$critical_failed;
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyHash() {
+            const hashText = document.getElementById('hashResult').textContent;
+            navigator.clipboard.writeText(hashText).then(function() {
+                // Change button text temporarily
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                button.style.backgroundColor = 'var(--success)';
+                
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                    button.style.backgroundColor = '';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = hashText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                button.style.backgroundColor = 'var(--success)';
+                
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                    button.style.backgroundColor = '';
+                }, 2000);
+            });
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                // Show password
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                // Hide password
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+    </script>
 </body>
 </html> 

@@ -3,5 +3,8 @@
     "snippet6": "snippet6.html",
     "blog-posts": "blog-posts.html",
     "blog-single": "blog-single.html",
-    "test": "test-snippet.html"
+    "test": "test-snippet.html",
+    "nav": "nav.html",
+    "style": "bh_styles.html",
+    "header": "header.html"
 }

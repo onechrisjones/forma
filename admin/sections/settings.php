@@ -12,6 +12,9 @@
             <div class="file-item" data-section="podcast">
                 <i class="fas fa-podcast"></i> Podcast
             </div>
+            <div class="file-item" data-section="cache">
+                <i class="fas fa-bolt"></i> Cache
+            </div>
             <div class="file-item" data-section="about">
                 <i class="fas fa-info-circle"></i> About
             </div>
@@ -170,6 +173,97 @@
             </div>
         </form>
 
+        <!-- Cache Settings -->
+        <form id="cache-settings" class="settings-form section-content">
+            <h3>Cache Settings</h3>
+            
+            <div class="form-group">
+                <label class="switch-label">
+                    <span>Enable Page Caching</span>
+                    <div class="switch-control">
+                        <input type="checkbox" id="cache_enabled" name="enabled">
+                        <span class="switch"></span>
+                    </div>
+                </label>
+                <span class="hint">When enabled, page rendering results will be cached for faster loading</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="cache_ttl">Cache Duration (seconds)</label>
+                <input type="number" id="cache_ttl" name="ttl" min="60" max="2592000" value="3600">
+                <span class="hint">How long to keep cached pages before refreshing (3600 = 1 hour)</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="cache_excluded_paths">Excluded Paths</label>
+                <textarea id="cache_excluded_paths" name="excluded_paths" rows="3" placeholder="One path per line, e.g.: /admin, /dynamic-page"></textarea>
+                <span class="hint">Pages that should never be cached (one per line)</span>
+            </div>
+            
+            <div class="cache-status">
+                <h4>Cache Status</h4>
+                <div class="status-display">
+                    <div class="status-item">
+                        <span class="label">Cache Size:</span>
+                        <span class="value" id="cache_size">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Cached Pages:</span>
+                        <span class="value" id="cache_count">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Last Rebuild:</span>
+                        <span class="value" id="cache_last_rebuild">Never</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cache-files">
+                <h4>Cached Files</h4>
+                <div id="cache_files_container">
+                    <table id="cache_files_table">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Size</th>
+                                <th>Last Modified</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cache_files_list">
+                            <tr>
+                                <td colspan="3" class="text-center">Loading cache files...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no_cache_files" style="display: none;">
+                    <p>No cached files found.</p>
+                </div>
+            </div>
+            
+            <div class="server-info">
+                <h4>Server Information</h4>
+                <div class="status-display">
+                    <div class="status-item">
+                        <span class="label">PHP Version:</span>
+                        <span class="value" id="php_version">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Server Software:</span>
+                        <span class="value" id="server_software">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Cache Directory:</span>
+                        <span class="value" id="cache_directory">Checking...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Directory Writable:</span>
+                        <span class="value" id="directory_writable">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+
         <!-- About Section -->
         <div id="about-section" class="settings-form section-content">
             <h3>About Forma CMS</h3>
@@ -236,6 +330,13 @@
                     <button type="button" class="standard-btn" id="btn-copy-podcast-feed"><i class="small fas fa-copy"></i> Copy Feed URL</button>
                     <button type="button" class="standard-btn" id="btn-regenerate-podcast-feed"><i class="small fas fa-sync"></i> Regenerate Feed</button>
                     <button type="button" class="standard-btn" id="btn-save-podcast"><i class="small fas fa-save"></i> Save Changes</button>
+                </div>
+                
+                <!-- Cache Settings Buttons -->
+                <div id="cache-buttons" class="button-group" style="display: none;">
+                    <button type="button" class="standard-btn" id="btn-clear-cache"><i class="small fas fa-trash"></i> Clear Cache</button>
+                    <button type="button" class="standard-btn" id="btn-rebuild-cache"><i class="small fas fa-sync"></i> Rebuild Cache</button>
+                    <button type="button" class="standard-btn" id="btn-save-cache"><i class="small fas fa-save"></i> Save Settings</button>
                 </div>
             </div>
         </footer>
@@ -388,6 +489,123 @@
     font-size: 11px;
     font-weight: bold;
 }
+
+/* Switch styling for cache toggle */
+.switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.switch-control {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.switch-control input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.switch:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .switch {
+    background-color: var(--primary);
+}
+
+input:checked + .switch:before {
+    transform: translateX(24px);
+}
+
+/* Cache status display */
+.cache-status {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.status-display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.status-item .label {
+    font-weight: bold;
+}
+
+/* Cache files table styling */
+.cache-files, .server-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+#cache_files_table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#cache_files_table th,
+#cache_files_table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+#cache_files_table th {
+    background-color: var(--input-bg);
+    font-weight: bold;
+}
+
+#cache_files_table tr:nth-child(even) {
+    background-color: var(--input-bg);
+}
+
+#cache_files_table tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.text-center {
+    text-align: center;
+}
 </style>
 
 <script>
@@ -448,10 +666,12 @@
                 const generalButtons = document.getElementById('general-buttons');
                 const blogButtons = document.getElementById('blog-buttons');
                 const podcastButtons = document.getElementById('podcast-buttons');
+                const cacheButtons = document.getElementById('cache-buttons');
                 
                 if (generalButtons) generalButtons.style.display = section === 'general' ? 'flex' : 'none';
                 if (blogButtons) blogButtons.style.display = section === 'blog' ? 'flex' : 'none';
                 if (podcastButtons) podcastButtons.style.display = section === 'podcast' ? 'flex' : 'none';
+                if (cacheButtons) cacheButtons.style.display = section === 'cache' ? 'flex' : 'none';
             });
         });
         
@@ -663,9 +883,9 @@
             .then(response => response.json())
             .then(settings => {
                 console.log('Loaded general settings:', settings);
-                document.getElementById('site_title').value = settings.site_title || '';
-                document.getElementById('site_description').value = settings.site_description || '';
-                document.getElementById('site_url').value = settings.site_url || '';
+                document.getElementById('site_title').value = settings.title || '';
+                document.getElementById('site_description').value = settings.description || '';
+                document.getElementById('site_url').value = settings.url || '';
                 document.getElementById('language').value = settings.language || 'en';
                 document.getElementById('timezone').value = settings.timezone || 'UTC';
             })
@@ -803,6 +1023,60 @@
             .catch(error => {
                 console.error('Error loading about section:', error);
             });
+        
+        // Load cache settings
+        fetch('/admin/api/settings.php?section=cache')
+            .then(response => response.json())
+            .then(settings => {
+                console.log('Loaded cache settings:', settings);
+                document.getElementById('cache_enabled').checked = settings.enabled === true || settings.enabled === 'true';
+                document.getElementById('cache_ttl').value = settings.ttl || 3600;
+                document.getElementById('cache_excluded_paths').value = Array.isArray(settings.excluded_paths) 
+                    ? settings.excluded_paths.join('\n') 
+                    : settings.excluded_paths || '';
+                
+                // Update cache status info
+                if (settings.status) {
+                    document.getElementById('cache_size').textContent = settings.status.size || 'Unknown';
+                    document.getElementById('cache_count').textContent = settings.status.count || '0';
+                    document.getElementById('cache_last_rebuild').textContent = settings.status.last_rebuild || 'Never';
+                    
+                    // Update server info
+                    if (settings.status.server_info) {
+                        const serverInfo = settings.status.server_info;
+                        document.getElementById('php_version').textContent = serverInfo.php_version || 'Unknown';
+                        document.getElementById('server_software').textContent = serverInfo.server_software || 'Unknown';
+                        document.getElementById('cache_directory').textContent = serverInfo.cache_directory || 'Unknown';
+                        document.getElementById('directory_writable').textContent = serverInfo.directory_writable || 'Unknown';
+                    }
+                    
+                    // Update cache files table
+                    const cacheFiles = settings.status.files || [];
+                    const cacheFilesList = document.getElementById('cache_files_list');
+                    const cacheFilesContainer = document.getElementById('cache_files_container');
+                    const noCacheFiles = document.getElementById('no_cache_files');
+                    
+                    if (cacheFiles.length > 0) {
+                        let html = '';
+                        cacheFiles.forEach(file => {
+                            html += `<tr>
+                                <td>${file.path}</td>
+                                <td>${file.size}</td>
+                                <td>${file.modified}</td>
+                            </tr>`;
+                        });
+                        cacheFilesList.innerHTML = html;
+                        cacheFilesContainer.style.display = 'block';
+                        noCacheFiles.style.display = 'none';
+                    } else {
+                        cacheFilesContainer.style.display = 'none';
+                        noCacheFiles.style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading cache settings:', error);
+            });
     }
 
     function setupButtonHandlers() {
@@ -825,9 +1099,9 @@
                 this.innerHTML = '<i class="small fas fa-spinner fa-spin"></i> Saving...';
                 
                 const settings = {
-                    site_title: document.getElementById('site_title').value,
-                    site_description: document.getElementById('site_description').value,
-                    site_url: document.getElementById('site_url').value,
+                    title: document.getElementById('site_title').value,
+                    description: document.getElementById('site_description').value,
+                    url: document.getElementById('site_url').value,
                     language: document.getElementById('language').value,
                     timezone: document.getElementById('timezone').value
                 };
@@ -1106,6 +1380,205 @@
                     this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Network error';
                     setTimeout(() => {
                         this.innerHTML = '<i class="small fas fa-sync"></i> Regenerate Feed';
+                    }, 2000);
+                });
+            });
+        }
+        
+        // Cache settings save button
+        const saveCacheBtn = document.getElementById('btn-save-cache');
+        if (saveCacheBtn) {
+            saveCacheBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('Submitting cache settings...');
+                this.innerHTML = '<i class="small fas fa-spinner fa-spin"></i> Saving...';
+                
+                const settings = {
+                    enabled: document.getElementById('cache_enabled').checked,
+                    ttl: parseInt(document.getElementById('cache_ttl').value) || 3600,
+                    excluded_paths: document.getElementById('cache_excluded_paths').value.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0)
+                };
+                
+                fetch('/admin/api/settings.php?section=cache', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        this.innerHTML = '<i class="small fas fa-check"></i> Saved!';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-save"></i> Save Settings';
+                        }, 2000);
+                    } else {
+                        this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Error: ' + (result.error || 'Unknown error');
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-save"></i> Save Settings';
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving cache settings:', error);
+                    this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Network error';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="small fas fa-save"></i> Save Settings';
+                    }, 2000);
+                });
+            });
+        }
+        
+        // Clear cache button
+        const clearCacheBtn = document.getElementById('btn-clear-cache');
+        if (clearCacheBtn) {
+            clearCacheBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('Clearing cache...');
+                this.innerHTML = '<i class="small fas fa-spinner fa-spin"></i> Clearing...';
+                
+                fetch('/admin/api/cache.php?action=clear', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        this.innerHTML = '<i class="small fas fa-check"></i> Cache Cleared!';
+                        
+                        // Update status if available
+                        if (result.status) {
+                            document.getElementById('cache_size').textContent = result.status.size || '0 bytes';
+                            document.getElementById('cache_count').textContent = result.status.count || '0';
+                            
+                            // Update server info
+                            if (result.status.server_info) {
+                                const serverInfo = result.status.server_info;
+                                document.getElementById('php_version').textContent = serverInfo.php_version || 'Unknown';
+                                document.getElementById('server_software').textContent = serverInfo.server_software || 'Unknown';
+                                document.getElementById('cache_directory').textContent = serverInfo.cache_directory || 'Unknown';
+                                document.getElementById('directory_writable').textContent = serverInfo.directory_writable || 'Unknown';
+                            }
+                            
+                            // Update cache files table
+                            const cacheFiles = result.status.files || [];
+                            const cacheFilesList = document.getElementById('cache_files_list');
+                            const cacheFilesContainer = document.getElementById('cache_files_container');
+                            const noCacheFiles = document.getElementById('no_cache_files');
+                            
+                            if (cacheFiles.length > 0) {
+                                let html = '';
+                                cacheFiles.forEach(file => {
+                                    html += `<tr>
+                                        <td>${file.path}</td>
+                                        <td>${file.size}</td>
+                                        <td>${file.modified}</td>
+                                    </tr>`;
+                                });
+                                cacheFilesList.innerHTML = html;
+                                cacheFilesContainer.style.display = 'block';
+                                noCacheFiles.style.display = 'none';
+                            } else {
+                                cacheFilesContainer.style.display = 'none';
+                                noCacheFiles.style.display = 'block';
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-trash"></i> Clear Cache';
+                        }, 2000);
+                    } else {
+                        this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Error';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-trash"></i> Clear Cache';
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error clearing cache:', error);
+                    this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Network error';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="small fas fa-trash"></i> Clear Cache';
+                    }, 2000);
+                });
+            });
+        }
+        
+        // Rebuild cache button
+        const rebuildCacheBtn = document.getElementById('btn-rebuild-cache');
+        if (rebuildCacheBtn) {
+            rebuildCacheBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('Rebuilding cache...');
+                this.innerHTML = '<i class="small fas fa-spinner fa-spin"></i> Rebuilding...';
+                
+                fetch('/admin/api/cache.php?action=rebuild', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        this.innerHTML = '<i class="small fas fa-check"></i> Cache Rebuilt!';
+                        
+                        // Update status if available
+                        if (result.status) {
+                            document.getElementById('cache_size').textContent = result.status.size || '0 bytes';
+                            document.getElementById('cache_count').textContent = result.status.count || '0';
+                            document.getElementById('cache_last_rebuild').textContent = result.status.last_rebuild || 'Now';
+                            
+                            // Update server info
+                            if (result.status.server_info) {
+                                const serverInfo = result.status.server_info;
+                                document.getElementById('php_version').textContent = serverInfo.php_version || 'Unknown';
+                                document.getElementById('server_software').textContent = serverInfo.server_software || 'Unknown';
+                                document.getElementById('cache_directory').textContent = serverInfo.cache_directory || 'Unknown';
+                                document.getElementById('directory_writable').textContent = serverInfo.directory_writable || 'Unknown';
+                            }
+                            
+                            // Update cache files table
+                            const cacheFiles = result.status.files || [];
+                            const cacheFilesList = document.getElementById('cache_files_list');
+                            const cacheFilesContainer = document.getElementById('cache_files_container');
+                            const noCacheFiles = document.getElementById('no_cache_files');
+                            
+                            if (cacheFiles.length > 0) {
+                                let html = '';
+                                cacheFiles.forEach(file => {
+                                    html += `<tr>
+                                        <td>${file.path}</td>
+                                        <td>${file.size}</td>
+                                        <td>${file.modified}</td>
+                                    </tr>`;
+                                });
+                                cacheFilesList.innerHTML = html;
+                                cacheFilesContainer.style.display = 'block';
+                                noCacheFiles.style.display = 'none';
+                            } else {
+                                cacheFilesContainer.style.display = 'none';
+                                noCacheFiles.style.display = 'block';
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-sync"></i> Rebuild Cache';
+                        }, 2000);
+                    } else {
+                        this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Error';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="small fas fa-sync"></i> Rebuild Cache';
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error rebuilding cache:', error);
+                    this.innerHTML = '<i class="small fas fa-exclamation-triangle"></i> Network error';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="small fas fa-sync"></i> Rebuild Cache';
                     }, 2000);
                 });
             });

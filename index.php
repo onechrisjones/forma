@@ -10,20 +10,216 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Define constants
+define('ROOT_DIR', __DIR__);
+define('CONTENT_DIR', ROOT_DIR . '/content');
+define('CONFIG_DIR', ROOT_DIR . '/config');
+define('ADMIN_DIR', ROOT_DIR . '/admin');
+define('CACHE_DIR', ROOT_DIR . '/cache');
+
 // Include Parsedown for markdown support
-require_once __DIR__ . '/lib/Parsedown.php';
+require_once ROOT_DIR . '/lib/Parsedown.php';
 
 // Include Twig
-require_once __DIR__ . '/lib/Twig/init.php';
+require_once ROOT_DIR . '/lib/Twig/init.php';
 
 // Include common configuration
-require_once __DIR__ . '/config.php';
+require_once ROOT_DIR . '/config.php';
 
 // Load configuration
 if (file_exists(CONFIG_DIR . '/config.json')) {
     $config = json_decode(file_get_contents(CONFIG_DIR . '/config.json'), true);
 } else {
     $config = [];
+}
+
+/**
+ * Basic caching functions
+ */
+function isCachingEnabled() {
+    global $config;
+    $enabled = isset($config['cache']['enabled']) && $config['cache']['enabled'] === true;
+    error_log("isCachingEnabled check: " . ($enabled ? 'true' : 'false') . " (config value: " . (isset($config['cache']['enabled']) ? var_export($config['cache']['enabled'], true) : 'not set') . ")");
+    return $enabled;
+}
+
+function shouldCachePath($path) {
+    global $config;
+    
+    if (!isCachingEnabled()) {
+        error_log("Caching disabled for path: $path");
+        return false;
+    }
+    
+    // Don't cache admin routes
+    if (strpos($path, '/admin') === 0) {
+        error_log("Not caching admin path: $path");
+        return false;
+    }
+    
+    // Check excluded paths
+    if (isset($config['cache']['excluded_paths']) && is_array($config['cache']['excluded_paths'])) {
+        foreach ($config['cache']['excluded_paths'] as $excludedPath) {
+            if ($excludedPath === $path || ($excludedPath !== '/' && strpos($path, $excludedPath) === 0)) {
+                error_log("Path excluded from cache: $path (matches $excludedPath)");
+                return false;
+            }
+        }
+    }
+    
+    // Special handling for blog and podcast URLs
+    // They use dynamic templates, so don't check for content files
+    if (strpos($path, '/blog') === 0 || strpos($path, '/podcast') === 0) {
+        error_log("Special route eligible for caching: $path");
+        return true;
+    }
+    
+    error_log("Path eligible for caching: $path");
+    return true;
+}
+
+function getCacheFilePath($path) {
+    // Generate a cache-friendly filename
+    $cacheFile = $path;
+    error_log("getCacheFilePath: Original path: $path");
+    
+    // Ensure we have a valid path
+    if (empty($cacheFile) || $cacheFile === '') {
+        $cacheFile = '/home';
+        error_log("Empty path detected, using default: $cacheFile");
+    }
+    
+    // Home page special case
+    if ($cacheFile === '/') {
+        $cacheFile = '/home';
+        error_log("Root path detected, using: $cacheFile");
+    }
+    
+    // Ensure path is clean
+    $cacheFile = rtrim($cacheFile, '/');
+    
+    // Handle special routes like /blog and /podcast
+    if ($cacheFile === '/blog') {
+        $cacheFile = '/blog/index';
+        error_log("Blog index path detected, using: $cacheFile");
+    } else if ($cacheFile === '/podcast') {
+        $cacheFile = '/podcast/index';
+        error_log("Podcast index path detected, using: $cacheFile");
+    }
+    
+    // Full path to cache file
+    $fullCachePath = CACHE_DIR . $cacheFile . '.html';
+    error_log("Full cache path: $fullCachePath for request path: $path");
+    
+    // Create directory structure if needed
+    $cacheDir = dirname($fullCachePath);
+    if (!file_exists($cacheDir)) {
+        $result = mkdir($cacheDir, 0777, true); // Changed from 0755 to 0777 for testing
+        error_log("Creating cache directory: $cacheDir - " . ($result ? 'Success' : 'Failed: ' . (error_get_last() ? error_get_last()['message'] : 'Unknown error')));
+    }
+    
+    return $fullCachePath;
+}
+
+function getCachedPage($path) {
+    error_log("getCachedPage called for path: $path");
+    
+    if (!shouldCachePath($path)) {
+        error_log("getCachedPage: Not using cache for path: $path");
+        return false;
+    }
+    
+    $cacheFile = getCacheFilePath($path);
+    error_log("getCachedPage: Looking for cache file: $cacheFile");
+    
+    if (!file_exists($cacheFile)) {
+        error_log("Cache miss: $cacheFile (file doesn't exist)");
+        return false;
+    }
+    
+    // Check if cache is expired
+    global $config;
+    $cacheTtl = $config['cache']['ttl'] ?? 3600; // Default 1 hour
+    $fileAge = time() - filemtime($cacheFile);
+    error_log("Cache file age: $fileAge seconds (TTL: $cacheTtl)");
+    
+    if ($fileAge > $cacheTtl) {
+        error_log("Cache expired: $cacheFile (age: {$fileAge}s, ttl: {$cacheTtl}s)");
+        return false; // Cache expired
+    }
+    
+    $content = file_get_contents($cacheFile);
+    if ($content === false) {
+        error_log("Error reading cache file: $cacheFile");
+        return false;
+    }
+    
+    error_log("Cache hit: $cacheFile (" . strlen($content) . " bytes)");
+    return $content;
+}
+
+function cachePageOutput($path, $output) {
+    error_log("cachePageOutput called for path: $path with " . strlen($output) . " bytes");
+    
+    if (!shouldCachePath($path)) {
+        error_log("Not caching due to shouldCachePath() returning false for: $path");
+        return false;
+    }
+    
+    // Don't cache if this is a cache-warming request
+    if (isset($_SERVER['HTTP_X_CACHE_WARM'])) {
+        error_log("Not caching due to cache-warm header: $path");
+        return false;
+    }
+    
+    // Don't cache empty output
+    if (empty($output)) {
+        error_log("Not caching empty output for: $path");
+        return false;
+    }
+    
+    $cacheFile = getCacheFilePath($path);
+    error_log("Preparing to cache output for path: $path to file: $cacheFile");
+    
+    // Add cache metadata to the output
+    $output .= "\n<!-- Cache metadata start -->";
+    $output .= "\n<!-- Cached at: " . date('Y-m-d H:i:s') . " -->";
+    $output .= "\n<!-- Cache path: " . $path . " -->";
+    $output .= "\n<!-- Cache file: " . basename($cacheFile) . " -->";
+    $output .= "\n<!-- Cache file full path: " . $cacheFile . " -->";
+    $output .= "\n<!-- Cache TTL: " . ($config['cache']['ttl'] ?? 3600) . " seconds -->";
+    $output .= "\n<!-- Cache metadata end -->";
+    
+    // Verify cache directory exists
+    $cacheDir = dirname($cacheFile);
+    if (!file_exists($cacheDir)) {
+        error_log("Creating cache directory: $cacheDir");
+        $result = mkdir($cacheDir, 0777, true);
+        error_log("Directory creation result: " . ($result ? "Success" : "Failed: " . error_get_last()['message']));
+    }
+    
+    error_log("Cache directory permissions: " . substr(sprintf('%o', fileperms($cacheDir)), -4));
+    error_log("Writing " . strlen($output) . " bytes to cache file: $cacheFile");
+    
+    // First, try to write to a temporary file, then rename it
+    // This avoids race conditions where the file is partially written when read
+    $tempFile = $cacheFile . '.tmp.' . uniqid();
+    $result = file_put_contents($tempFile, $output);
+    
+    if ($result === false) {
+        error_log("Cache write FAILED (temp file): " . (error_get_last() ? error_get_last()['message'] : 'Unknown error'));
+        return false;
+    }
+    
+    // Now rename the temp file to the final file
+    if (!rename($tempFile, $cacheFile)) {
+        error_log("Failed to rename temp cache file: " . (error_get_last() ? error_get_last()['message'] : 'Unknown error'));
+        unlink($tempFile); // Clean up the temp file
+        return false;
+    }
+    
+    error_log("Cache write SUCCESS: $result bytes written to $cacheFile");
+    return $result;
 }
 
 // Basic routing
@@ -33,32 +229,70 @@ $path = parse_url($request, PHP_URL_PATH);
 // Remove trailing slashes
 $path = rtrim($path, '/');
 
-// Admin panel route
+// Log the path for debugging
+error_log("Original request path: " . $path);
+
+// Fix empty path for home page
+if ($path === '') {
+    $path = '/';
+    error_log("Empty path detected, setting to root path: $path");
+}
+
+// Admin panel route - handle this BEFORE any caching logic
 if ($path === '/admin') {
+    error_log("Admin route detected, bypassing cache");
     require ADMIN_DIR . '/index.php';
     exit;
 }
 
-// Default to home page if no path specified
-if ($path === '' || $path === '/') {
-    $path = '/home';
+// Check for cached version first (only for GET requests)
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    error_log("Checking for cached version of path: $path");
+    $cachedOutput = getCachedPage($path);
+    if ($cachedOutput !== false) {
+        error_log("Serving cached version of path: $path");
+        echo $cachedOutput;
+        exit;
+    } else {
+        error_log("No cached version found for path: $path, will generate content");
+    }
 }
 
-// Check if this is a podcast URL
+// Start output buffering to capture rendered content for caching
+ob_start();
+
+// Add a timestamp comment for debugging cache
+echo "<!-- Page generated at: " . date('Y-m-d H:i:s') . " -->\n";
+
+// ===== SPECIAL ROUTE HANDLERS - MUST BE BEFORE CONTENT FILE LOOKUP =====
+
+// Check if this is a podcast URL - SPECIAL ROUTE HANDLER
 if (strpos($path, '/podcast') === 0) {
+    error_log("Podcast route detected: $path");
     // Special case for exact '/podcast' path (no trailing slash)
     if ($path === '/podcast') {
         $episodeId = '';
+        error_log("Podcast archive page requested");
     } else {
         $episodeId = substr($path, 9); // Remove '/podcast/' from the path
+        error_log("Podcast episode requested with ID: $episodeId");
     }
     
     // Load podcast data
     $podcastFile = CONTENT_DIR . '/podcast.json';
+    error_log("Looking for podcast data: $podcastFile (exists: " . (file_exists($podcastFile) ? 'yes' : 'no') . ")");
+    
     if (!file_exists($podcastFile)) {
         header("HTTP/1.0 404 Not Found");
         echo "<h1>404 Not Found</h1>";
         echo "<p>Podcast data not found.</p>";
+        
+        // Finalize cache and exit
+        $output = ob_get_contents();
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            cachePageOutput($path, $output);
+        }
+        ob_end_flush();
         exit;
     }
     
@@ -67,6 +301,13 @@ if (strpos($path, '/podcast') === 0) {
         header("HTTP/1.0 404 Not Found");
         echo "<h1>404 Not Found</h1>";
         echo "<p>Invalid podcast data.</p>";
+        
+        // Finalize cache and exit
+        $output = ob_get_contents();
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            cachePageOutput($path, $output);
+        }
+        ob_end_flush();
         exit;
     }
     
@@ -84,6 +325,8 @@ if (strpos($path, '/podcast') === 0) {
         
         // Use the podcast-archive template page with Twig
         $podcastArchiveTemplate = CONTENT_DIR . '/pages/podcast-archive.html';
+        error_log("Looking for podcast archive template: $podcastArchiveTemplate (exists: " . (file_exists($podcastArchiveTemplate) ? 'yes' : 'no') . ")");
+        
         if (file_exists($podcastArchiveTemplate)) {
             try {
                 // Read the template
@@ -112,14 +355,14 @@ if (strpos($path, '/podcast') === 0) {
                 $context = [
                     'episodes' => $podcastData['episodes'],
                     'podcast' => [
-                        'title' => $podcastInfo['title'] ?? $config['general']['site_title'] ?? 'Podcast',
+                        'title' => $podcastInfo['title'] ?? $config['site']['title'] ?? 'Podcast',
                         'description' => $podcastInfo['description'] ?? '',
-                        'cover_art' => $podcastInfo['cover_art'] ?? ''
+                        'cover_art' => $podcastInfo['image'] ?? ''
                     ],
                     'site' => [
-                        'title' => $config['general']['site_title'] ?? 'My Site',
-                        'description' => $config['general']['site_description'] ?? '',
-                        'url' => $config['general']['site_url'] ?? ''
+                        'title' => $config['site']['title'] ?? 'My Site',
+                        'description' => $config['site']['description'] ?? '',
+                        'url' => $config['site']['url'] ?? ''
                     ],
                     'config' => $config
                 ];
@@ -131,94 +374,24 @@ if (strpos($path, '/podcast') === 0) {
                 $content = parseShortcodes($content);
                 
                 // Output the rendered template
+                ob_clean(); // Clear buffer but keep buffering active
                 echo $content;
+                
+                // Finalize cache and exit
+                $output = ob_get_contents();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    error_log("Caching podcast archive page");
+                    cachePageOutput($path, $output);
+                }
+                ob_end_flush();
                 exit;
             } catch (Exception $e) {
                 error_log("Error rendering podcast archive template: " . $e->getMessage());
                 // Fall back to default rendering below
             }
+        } else {
+            error_log("Podcast archive template not found, using fallback rendering");
         }
-        
-        // If we got here, either the template file doesn't exist or there was an error
-        // Fall back to building the podcast archive HTML manually
-        $content = '<h1>Podcast</h1>';
-        $content .= '<div class="podcast-episodes">';
-        
-        foreach ($podcastData['episodes'] as $episode) {
-            $content .= '<article class="episode">';
-            $content .= '<h2><a href="/podcast/' . htmlspecialchars($episode['id']) . '">' . htmlspecialchars($episode['title']) . '</a></h2>';
-            
-            // Episode metadata
-            $content .= '<div class="episode-meta">';
-            $content .= '<span class="number">Episode: ' . htmlspecialchars($episode['episode_number']) . '</span>';
-            $content .= '<span class="date">Date: ' . htmlspecialchars($episode['publish_date']) . '</span>';
-            $content .= '<span class="duration">Duration: ' . htmlspecialchars($episode['duration']) . '</span>';
-            $content .= '</div>';
-            
-            if (!empty($episode['description'])) {
-                $content .= '<div class="description">' . htmlspecialchars($episode['description']) . '</div>';
-            }
-            
-            $content .= '<div class="actions"><a href="/podcast/' . htmlspecialchars($episode['id']) . '">Listen Now</a></div>';
-            $content .= '</article>';
-        }
-        
-        $content .= '</div>';
-        
-        // Parse any shortcodes in the content
-        $content = parseShortcodes($content);
-        
-        // Simple layout for fallback
-        $layout = '<!DOCTYPE html>
-<html>
-<head>
-    <title>Podcast - ' . htmlspecialchars($config['general']['site_title'] ?? 'My Site') . '</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .podcast-episodes {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-        .episode {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 1.5rem;
-        }
-        .episode h2 {
-            margin-top: 0;
-        }
-        .episode-meta {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        .actions a {
-            display: inline-block;
-            background: #007bff;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            text-decoration: none;
-            margin-top: 1rem;
-        }
-    </style>
-</head>
-<body>' . $content . '</body>
-</html>';
-        
-        echo $layout;
-        exit;
     } else {
         // Find the specific episode
         $episode = null;
@@ -233,6 +406,13 @@ if (strpos($path, '/podcast') === 0) {
             header("HTTP/1.0 404 Not Found");
             echo "<h1>404 Not Found</h1>";
             echo "<p>Episode not found.</p>";
+            
+            // Finalize cache and exit
+            $output = ob_get_contents();
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                cachePageOutput($path, $output);
+            }
+            ob_end_flush();
             exit;
         }
         
@@ -244,26 +424,7 @@ if (strpos($path, '/podcast') === 0) {
         
         // Use the podcast-single template page with Twig
         $podcastSingleTemplate = CONTENT_DIR . '/pages/podcast-single.html';
-        
-        // First, try to find a template with the podcast-single-template slug
-        $pageFiles = glob(CONTENT_DIR . '/pages/*.html');
-        foreach ($pageFiles as $file) {
-            $fileContent = file_get_contents($file);
-            if (preg_match('/^\s*<!--META\s*(.*?)\s*-->/s', $fileContent, $matches)) {
-                $metaContent = $matches[1];
-                $metaLines = explode("\n", $metaContent);
-                
-                foreach ($metaLines as $line) {
-                    if (preg_match('/^\s*slug:\s*(.*)$/i', $line, $slugMatch)) {
-                        $fileSlug = trim($slugMatch[1]);
-                        if ($fileSlug === 'podcast-single-template') {
-                            $podcastSingleTemplate = $file;
-                            break 2; // Break both loops
-                        }
-                    }
-                }
-            }
-        }
+        error_log("Looking for podcast single template: $podcastSingleTemplate (exists: " . (file_exists($podcastSingleTemplate) ? 'yes' : 'no') . ")");
         
         if (file_exists($podcastSingleTemplate)) {
             try {
@@ -293,145 +454,93 @@ if (strpos($path, '/podcast') === 0) {
                 $context = [
                     'episode' => $episode,
                     'podcast' => [
-                        'title' => $podcastInfo['title'] ?? $config['general']['site_title'] ?? 'Podcast',
+                        'title' => $podcastInfo['title'] ?? $config['site']['title'] ?? 'Podcast',
                         'description' => $podcastInfo['description'] ?? '',
-                        'cover_art' => $podcastInfo['cover_art'] ?? ''
+                        'cover_art' => $podcastInfo['image'] ?? ''
                     ],
                     'site' => [
-                        'title' => $config['general']['site_title'] ?? 'My Site',
-                        'description' => $config['general']['site_description'] ?? '',
-                        'url' => $config['general']['site_url'] ?? ''
+                        'title' => $config['site']['title'] ?? 'My Site',
+                        'description' => $config['site']['description'] ?? '',
+                        'url' => $config['site']['url'] ?? ''
                     ],
-                    'config' => $config
+                    'config' => $config,
+                    'podcast_feed' => '/feeds/podcast.xml'
                 ];
                 
+                // Add debugging for the episode data
+                error_log("Episode data: " . json_encode($episode));
+                
+                // Check if the audio file exists
+                $audioFile = $episode['audio_file'] ?? null;
+                if ($audioFile) {
+                    // Check multiple possible locations for the audio file
+                    $audioPath1 = ROOT_DIR . '/uploads/' . $audioFile; // Absolute server path
+                    $audioPath2 = UPLOADS_DIR . '/' . $audioFile;      // Using UPLOADS_DIR constant
+                    
+                    $context['audio_exists'] = file_exists($audioPath1) || file_exists($audioPath2);
+                    $context['audio_path'] = '/uploads/' . $audioFile; // Browser-accessible path
+                    
+                    error_log("Audio file checks: $audioFile");
+                    error_log("Path 1 ($audioPath1): " . (file_exists($audioPath1) ? 'EXISTS' : 'NOT FOUND'));
+                    error_log("Path 2 ($audioPath2): " . (file_exists($audioPath2) ? 'EXISTS' : 'NOT FOUND'));
+                    error_log("Setting context audio_exists: " . ($context['audio_exists'] ? 'true' : 'false'));
+                    
+                    // Ensure the file has a browser-accessible URL regardless of existence check
+                    $context['audio_url'] = '/uploads/' . $audioFile;
+                } else {
+                    error_log("No audio file specified in episode data");
+                    $context['audio_exists'] = false;
+                    $context['audio_url'] = '';
+                }
+                
                 // Render the template
-                $content = $template->render($context);
+                $renderedContent = $template->render($context);
                 
                 // Parse shortcodes in the rendered content
-                $content = parseShortcodes($content);
+                $renderedContent = parseShortcodes($renderedContent);
                 
                 // Output the rendered template
-                echo $content;
+                ob_clean(); // Clear buffer but keep buffering active
+                echo $renderedContent;
+                
+                // Finalize cache and exit
+                $output = ob_get_contents();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    error_log("Caching podcast episode page");
+                    cachePageOutput($path, $output);
+                }
+                ob_end_flush();
                 exit;
             } catch (Exception $e) {
                 error_log("Error rendering podcast single template: " . $e->getMessage());
-                error_log("Error details: " . $e->getTraceAsString());
-                
-                // For debugging only - we'll display the error to see what's happening
-                echo '<div style="background-color: #ffdddd; border: 1px solid #ff0000; padding: 10px; margin: 10px 0;">';
-                echo '<h3>Template Rendering Error:</h3>';
-                echo '<pre>' . htmlspecialchars($e->getMessage()) . '</pre>';
-                echo '</div>';
-                
                 // Fall back to default rendering below
             }
+        } else {
+            error_log("Podcast single template not found, using fallback rendering");
         }
-        
-        // Fall back to simple template if Twig fails
-        $content = '<h1>' . htmlspecialchars($episode['title']) . '</h1>';
-        
-        // Episode metadata
-        $content .= '<div class="episode-meta">';
-        $content .= '<div class="meta-item"><strong>Episode:</strong> ' . htmlspecialchars($episode['episode_number']) . '</div>';
-        $content .= '<div class="meta-item"><strong>Season:</strong> ' . htmlspecialchars($episode['season_number']) . '</div>';
-        $content .= '<div class="meta-item"><strong>Date:</strong> ' . htmlspecialchars($episode['publish_date']) . '</div>';
-        $content .= '<div class="meta-item"><strong>Duration:</strong> ' . htmlspecialchars($episode['duration']) . '</div>';
-        $content .= '</div>';
-        
-        // Audio player
-        $content .= '<div class="audio-player">';
-        $content .= '<audio controls>';
-        $content .= '<source src="/uploads/' . htmlspecialchars($episode['audio_file']) . '" type="audio/mpeg">';
-        $content .= 'Your browser does not support the audio element.';
-        $content .= '</audio>';
-        $content .= '</div>';
-        
-        // Description
-        if (!empty($episode['description'])) {
-            $content .= '<div class="description">';
-            $content .= '<h2>Description</h2>';
-            $content .= '<p>' . htmlspecialchars($episode['description']) . '</p>';
-            $content .= '</div>';
-        }
-        
-        // Show notes
-        if (!empty($episode['show_notes_html'])) {
-            $content .= '<div class="show-notes">';
-            $content .= '<h2>Show Notes</h2>';
-            $content .= $episode['show_notes_html'];
-            $content .= '</div>';
-        }
-        
-        $content .= '<a href="/podcast" class="back-link">&larr; Back to All Episodes</a>';
-        
-        // Parse any shortcodes in the content
-        $content = parseShortcodes($content);
-        
-        // Simple layout for fallback
-        $layout = '<!DOCTYPE html>
-<html>
-<head>
-    <title>' . htmlspecialchars($episode['title']) . ' - ' . htmlspecialchars($config['general']['site_title'] ?? 'My Site') . '</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        .episode-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .meta-item {
-            padding: 0.5rem 1rem;
-            background: #f5f5f5;
-            border-radius: 4px;
-        }
-        .audio-player {
-            margin-bottom: 2rem;
-        }
-        audio {
-            width: 100%;
-        }
-        .description, .show-notes {
-            margin-bottom: 2rem;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 1rem;
-            color: #007bff;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>' . $content . '</body>
-</html>';
-        
-        echo $layout;
-        exit;
     }
+    
+    // Finalize cache and exit
+    $output = ob_get_contents();
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        cachePageOutput($path, $output);
+    }
+    ob_end_flush();
+    exit;
 }
 
-// Check if this is a blog URL
+// Check if this is a blog URL - SPECIAL ROUTE HANDLER
 if (strpos($path, '/blog') === 0) {
+    error_log("Blog route detected: $path");
     // Special case for exact '/blog' path (no trailing slash)
     if ($path === '/blog') {
         $slug = '';
+        error_log("Blog archive page requested");
     } else {
         // Make sure we're removing the right number of characters
         // for paths like /blog/slug (should remove 6 characters: '/blog/')
         $slug = substr($path, 6); // Remove '/blog/' from the path
+        error_log("Blog post requested with slug: $slug");
     }
     
     // OPTIMIZED: Single directory scan for both archive and individual posts
@@ -440,6 +549,9 @@ if (strpos($path, '/blog') === 0) {
     $postFile = null;
     
     if (is_dir($blogDir)) {
+        // Check if blog directory exists
+        error_log("Blog directory found: $blogDir");
+        
         // Single scan handles both archive listing and post lookup
         foreach (scandir($blogDir) as $file) {
             if ($file === '.' || $file === '..' || $file === '.DS_Store') continue;
@@ -496,6 +608,8 @@ if (strpos($path, '/blog') === 0) {
                 }
             }
         }
+    } else {
+        error_log("Blog directory not found: $blogDir");
     }
     
     // If no slug, show blog archive page
@@ -509,6 +623,8 @@ if (strpos($path, '/blog') === 0) {
         
         // Use the blog-archive template page with Twig
         $blogArchiveTemplate = CONTENT_DIR . '/pages/blog-archive.html';
+        error_log("Looking for blog archive template: $blogArchiveTemplate (exists: " . (file_exists($blogArchiveTemplate) ? 'yes' : 'no') . ")");
+        
         if (file_exists($blogArchiveTemplate)) {
             try {
                 // Read the template
@@ -537,9 +653,9 @@ if (strpos($path, '/blog') === 0) {
                 $context = [
                     'posts' => $posts,
                     'site' => [
-                        'title' => $config['general']['site_title'] ?? 'My Site',
-                        'description' => $config['general']['site_description'] ?? '',
-                        'url' => $config['general']['site_url'] ?? ''
+                        'title' => $config['site']['title'] ?? 'My Site',
+                        'description' => $config['site']['description'] ?? '',
+                        'url' => $config['site']['url'] ?? ''
                     ],
                     'config' => $config
                 ];
@@ -551,100 +667,25 @@ if (strpos($path, '/blog') === 0) {
                 $content = parseShortcodes($content);
                 
                 // Output the rendered template
+                ob_clean(); // Clear buffer but keep buffering active
                 echo $content;
+                
+                // Finalize cache and exit
+                $output = ob_get_contents();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    error_log("Caching blog archive page");
+                    cachePageOutput($path, $output);
+                }
+                ob_end_flush();
                 exit;
             } catch (Exception $e) {
                 error_log("Error rendering blog archive template: " . $e->getMessage());
                 // Fall back to default rendering below
             }
-        }
-        
-        // If we got here, either the template file doesn't exist or there was an error
-        // Fall back to building the blog archive HTML manually
-        $content = '<h1>Blog</h1>';
-        $content .= '<div class="blog-posts">';
-        
-        foreach ($posts as $post) {
-            $content .= '<article class="blog-post">';
-            $content .= '<h2><a href="/blog/' . htmlspecialchars($post['slug']) . '">' . htmlspecialchars($post['title']) . '</a></h2>';
-            
-            if (!empty($post['date'])) {
-                $content .= '<div class="date">' . htmlspecialchars($post['date']) . '</div>';
-            }
-            
-            if (!empty($post['author'])) {
-                $content .= '<div class="author">By ' . htmlspecialchars($post['author']) . '</div>';
-            }
-            
-            if (!empty($post['description'])) {
-                $content .= '<div class="description">' . htmlspecialchars($post['description']) . '</div>';
-            }
-            
-            $content .= '<div class="read-more"><a href="/blog/' . htmlspecialchars($post['slug']) . '">Read more</a></div>';
-            $content .= '</article>';
-        }
-        
-        $content .= '</div>';
-        
-        // Parse any shortcodes in the content
-        $content = parseShortcodes($content);
-        
-        // Render with layout
-        if (file_exists(CONTENT_DIR . '/templates/blog-archive.html')) {
-            $layout = file_get_contents(CONTENT_DIR . '/templates/blog-archive.html');
-        } else if (file_exists(CONTENT_DIR . '/templates/layout.html')) {
-            $layout = file_get_contents(CONTENT_DIR . '/templates/layout.html');
         } else {
-            // Default to basic layout
-            $layout = '<!DOCTYPE html>
-<html>
-<head>
-    <title>Blog - {{site_title}}</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .blog-posts {
-            max-width: 800px;
-            margin: 0 auto;
+            error_log("Blog archive template not found, using fallback rendering");
         }
-        .blog-post {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-        }
-        .blog-post:last-child {
-            border-bottom: none;
-        }
-        .date, .author {
-            display: inline-block;
-            margin-right: 15px;
-            color: #666;
-            font-size: 0.9em;
-        }
-        .description {
-            margin-top: 10px;
-        }
-        .read-more {
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    {{content}}
-</body>
-</html>';
-        }
-        
-        // Replace variables in layout
-        $layout = str_replace('{{content}}', $content, $layout);
-        $layout = str_replace('{{site_title}}', $config['general']['site_title'] ?? 'My Site', $layout);
-        
-        echo $layout;
-        exit;
-    }
-    
-    // If blog post found, process it
-    if ($postFile && file_exists($postFile)) {
+    } else if ($postFile && file_exists($postFile)) {
         // Use already-parsed data instead of re-reading file
         $content = $foundPostData['content'];
         $yamlData = $foundPostData['yamlData'];
@@ -665,6 +706,8 @@ if (strpos($path, '/blog') === 0) {
         
         // Use the blog-single template page with Twig
         $blogSingleTemplate = CONTENT_DIR . '/pages/blog-single.html';
+        error_log("Looking for blog single template: $blogSingleTemplate (exists: " . (file_exists($blogSingleTemplate) ? 'yes' : 'no') . ")");
+        
         if (file_exists($blogSingleTemplate)) {
             try {
                 // Read the template
@@ -693,9 +736,9 @@ if (strpos($path, '/blog') === 0) {
                 $context = [
                     'post' => $postData,
                     'site' => [
-                        'title' => $config['general']['site_title'] ?? 'My Site',
-                        'description' => $config['general']['site_description'] ?? '',
-                        'url' => $config['general']['site_url'] ?? ''
+                        'title' => $config['site']['title'] ?? 'My Site',
+                        'description' => $config['site']['description'] ?? '',
+                        'url' => $config['site']['url'] ?? ''
                     ],
                     'config' => $config
                 ];
@@ -707,51 +750,57 @@ if (strpos($path, '/blog') === 0) {
                 $renderedContent = parseShortcodes($renderedContent);
                 
                 // Output the rendered template
+                ob_clean(); // Clear buffer but keep buffering active
                 echo $renderedContent;
+                
+                // Finalize cache and exit
+                $output = ob_get_contents();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    error_log("Caching blog post page");
+                    cachePageOutput($path, $output);
+                }
+                ob_end_flush();
                 exit;
             } catch (Exception $e) {
                 error_log("Error rendering blog single template: " . $e->getMessage());
                 // Fall back to default rendering below
             }
-        }
-        
-        // Render the blog post with layout (fallback if template not found or error)
-        if (file_exists(CONTENT_DIR . '/templates/blog-post.html')) {
-            $layout = file_get_contents(CONTENT_DIR . '/templates/blog-post.html');
-        } else if (file_exists(CONTENT_DIR . '/templates/layout.html')) {
-            $layout = file_get_contents(CONTENT_DIR . '/templates/layout.html');
         } else {
-            // Default to basic layout
-            $layout = '<!DOCTYPE html>
-<html>
-<head>
-    <title>{{title}} - {{site_title}}</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-    <h1>{{title}}</h1>
-    <div class="post-meta">
-        <span class="date">{{date}}</span>
-        <span class="author">{{author}}</span>
-    </div>
-    <div class="content">
-        {{content}}
-    </div>
-</body>
-</html>';
+            error_log("Blog single template not found, using fallback rendering");
         }
+    } else {
+        // No blog post found
+        header("HTTP/1.0 404 Not Found");
+        echo "<h1>404 Not Found</h1>";
+        echo "<p>Blog post not found.</p>";
         
-        // Replace variables in layout
-        $layout = str_replace('{{content}}', $content, $layout);
-        $layout = str_replace('{{title}}', $yamlData['title'] ?? 'Blog Post', $layout);
-        $layout = str_replace('{{date}}', $yamlData['date'] ?? '', $layout);
-        $layout = str_replace('{{author}}', $yamlData['author'] ?? '', $layout);
-        $layout = str_replace('{{site_title}}', $config['general']['site_title'] ?? 'My Site', $layout);
-        
-        echo $layout;
+        // Finalize cache and exit
+        $output = ob_get_contents();
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            cachePageOutput($path, $output);
+        }
+        ob_end_flush();
         exit;
     }
+    
+    // Finalize cache and exit
+    $output = ob_get_contents();
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        cachePageOutput($path, $output);
+    }
+    ob_end_flush();
+    exit;
+}
+
+// ===== STANDARD CONTENT FILE LOOKUP =====
+
+// For content file lookup, use a normalized path
+$contentPath = $path;
+
+// Default to home page if root path
+if ($contentPath === '/') {
+    $contentPath = '/home';
+    error_log("Root path detected, using content path: $contentPath for file lookup");
 }
 
 // Look for content file using slug metadata first
@@ -784,75 +833,91 @@ foreach ($pageFiles as $file) {
 
 // If no page with the slug was found, try the traditional approach
 if (!$contentFile) {
-    $contentFile = CONTENT_DIR . '/pages' . $path . '.html';
+    $contentFile = CONTENT_DIR . '/pages' . $contentPath . '.html';
     if (!file_exists($contentFile)) {
-        $contentFile = CONTENT_DIR . '/pages' . $path . '.md';
+        $contentFile = CONTENT_DIR . '/pages' . $contentPath . '.md';
     }
+    error_log("Looking for content file at: $contentFile (exists: " . (file_exists($contentFile) ? 'yes' : 'no') . ")");
 }
 
 // 404 if no content found
 if (!file_exists($contentFile)) {
     header("HTTP/1.0 404 Not Found");
+    ob_clean(); // Clear buffer but keep buffering active
     echo "<h1>404 Not Found</h1>";
     echo "<p>The requested page could not be found.</p>";
-    exit;
-}
-
-// Get the content
-$content = file_get_contents($contentFile);
-error_log("=== Page Content Processing ===");
-error_log("Loading page: " . $contentFile);
-error_log("Content length: " . strlen($content));
-
-// Check if this is a complete HTML document
-$isCompleteHtml = preg_match('/<\!DOCTYPE.*?>/i', $content) || preg_match('/<html.*?>/i', $content);
-error_log("Is complete HTML document: " . ($isCompleteHtml ? 'yes' : 'no'));
-
-// If it's a markdown file, parse it
-if (pathinfo($contentFile, PATHINFO_EXTENSION) === 'md') {
-    error_log("Processing markdown file");
-    // Parse YAML front matter if present
-    $yamlData = [];
-    if (preg_match('/^---\s*\n(.*?)\n---\s*\n(.*)/s', $content, $matches)) {
-        $yaml = yaml_parse($matches[1]);
-        $content = $matches[2];
-        $yamlData = is_array($yaml) ? $yaml : [];
-    }
-    
-    // Convert markdown to HTML
-    $parsedown = new Parsedown();
-    $content = $parsedown->text($content);
-}
-
-// Parse any shortcodes in the content
-error_log("Processing shortcodes in content");
-$content = parseShortcodes($content);
-error_log("Finished processing shortcodes");
-
-// If it's a complete HTML document, output it directly
-if ($isCompleteHtml) {
-    error_log("Outputting complete HTML document");
-    echo $content;
-    exit;
-}
-
-// Check if there's a layout file
-if (file_exists(CONTENT_DIR . '/templates/layout.html')) {
-    $layout = file_get_contents(CONTENT_DIR . '/templates/layout.html');
-    // Simple variable replacement
-    $layout = str_replace('{{content}}', $content, $layout);
-    $layout = str_replace('{{site_title}}', $config['general']['site_title'] ?? 'My Site', $layout);
-    $layout = str_replace('{{site_description}}', $config['general']['site_description'] ?? '', $layout);
-    echo $layout;
+    error_log("404 Not Found: Content file does not exist: $contentFile for path: $path (content path: $contentPath)");
+    // Continue execution to allow for potential caching of 404 pages
 } else {
-    // If no layout file exists, wrap content in a basic HTML structure
-    ?>
+    // Get the content
+    $content = file_get_contents($contentFile);
+    error_log("=== Page Content Processing ===");
+    error_log("Loading page: " . $contentFile);
+    error_log("Content length: " . strlen($content));
+    
+    // Check if this is a complete HTML document
+    $isCompleteHtml = preg_match('/<\!DOCTYPE.*?>/i', $content) || preg_match('/<html.*?>/i', $content);
+    error_log("Is complete HTML document: " . ($isCompleteHtml ? 'yes' : 'no'));
+
+    // If it's a markdown file, parse it
+    if (pathinfo($contentFile, PATHINFO_EXTENSION) === 'md') {
+        error_log("Processing markdown file");
+        // Parse YAML front matter if present
+        $yamlData = [];
+        if (preg_match('/^---\s*\n(.*?)\n---\s*\n(.*)/s', $content, $matches)) {
+            if (function_exists('yaml_parse')) {
+                $yaml = yaml_parse($matches[1]);
+                $yamlData = is_array($yaml) ? $yaml : [];
+            } else {
+                // Manual parsing if yaml extension not available
+                $yamlLines = explode("\n", $matches[1]);
+                foreach ($yamlLines as $line) {
+                    if (preg_match('/^\s*([^:]+):\s*(.*)$/i', $line, $kv)) {
+                        $yamlData[trim($kv[1])] = trim($kv[2]);
+                    }
+                }
+            }
+            $content = $matches[2];
+        }
+        
+        // Convert markdown to HTML
+        $parsedown = new Parsedown();
+        $content = $parsedown->text($content);
+    }
+
+    // Parse any shortcodes in the content
+    error_log("Processing shortcodes in content");
+    $content = parseShortcodes($content);
+    error_log("Finished processing shortcodes");
+
+    // If it's a complete HTML document, output it directly
+    if ($isCompleteHtml) {
+        error_log("Outputting complete HTML document");
+        
+        // Instead of exiting, add content to the output buffer
+        // This ensures it can be cached later
+        ob_clean(); // Clear the buffer but keep buffering active
+        echo $content;
+        
+        // Continue execution to allow caching
+    } else {
+        // Check if there's a layout file
+        if (file_exists(CONTENT_DIR . '/templates/layout.html')) {
+            $layout = file_get_contents(CONTENT_DIR . '/templates/layout.html');
+            // Simple variable replacement
+            $layout = str_replace('{{content}}', $content, $layout);
+            $layout = str_replace('{{site_title}}', $config['site']['title'] ?? 'My Site', $layout);
+            $layout = str_replace('{{site_description}}', $config['site']['description'] ?? '', $layout);
+            echo $layout;
+        } else {
+            // If no layout file exists, wrap content in a basic HTML structure
+            ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $config['general']['site_title'] ?? 'My Site'; ?></title>
+    <title><?php echo $config['site']['title'] ?? 'My Site'; ?></title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -867,8 +932,42 @@ if (file_exists(CONTENT_DIR . '/templates/layout.html')) {
     <?php echo $content; ?>
 </body>
 </html>
-    <?php
+            <?php
+        }
+    }
 }
+
+// Finalize caching
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    error_log("=== FINALIZING CACHE ===");
+    
+    // Get the buffered content
+    $output = ob_get_contents();
+    $outputLength = strlen($output);
+    error_log("Output buffer size: $outputLength bytes");
+    
+    // Add cache debugging info at the end of the HTML
+    $output .= "\n<!-- Cache status: " . (isCachingEnabled() ? "Enabled" : "Disabled") . " -->";
+    $output .= "\n<!-- Cache time: " . date('Y-m-d H:i:s') . " -->";
+    $output .= "\n<!-- Request path: " . $path . " -->";
+    $output .= "\n<!-- Content path: " . $contentPath . " -->";
+    
+    // Save to cache if applicable
+    error_log("Attempting to cache for path: $path");
+    $cacheResult = cachePageOutput($path, $output);
+    
+    // End output buffering and send to browser
+    ob_end_flush();
+    
+    error_log("Cache result for $path: " . ($cacheResult ? "Cached successfully ($cacheResult bytes)" : "Not cached"));
+    error_log("=== END CACHING ===");
+} else {
+    // For non-GET requests, just flush the buffer
+    ob_end_flush();
+}
+
+// If we get here, something went wrong with the routing
+error_log("WARNING: Execution reached the end of the script without a proper route handler for path: $path");
 
 /**
  * Register common Twig filters (only once per request)
@@ -948,4 +1047,5 @@ function parseShortcodes($content) {
         
         return $matches[0]; // Return original shortcode if not found
     }, $content);
-} 
+}
+?> 

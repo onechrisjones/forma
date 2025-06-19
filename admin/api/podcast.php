@@ -84,7 +84,11 @@ function generatePodcastFeed() {
     
     // Start RSS feed
     $rss = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-    $rss .= '<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/">' . "\n";
+    $rss .= '<rss version="2.0" ' .
+            'xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" ' .
+            'xmlns:content="http://purl.org/rss/1.0/modules/content/" ' .
+            'xmlns:podcast="https://podcastindex.org/namespace/1.0" ' .
+            'xmlns:atom="http://www.w3.org/2005/Atom">' . "\n";
     $rss .= '<channel>' . "\n";
     
     // Channel information
@@ -100,7 +104,13 @@ function generatePodcastFeed() {
     $rss .= '    <itunes:name>' . htmlspecialchars($podcastSettings['author'] ?? '') . '</itunes:name>' . "\n";
     $rss .= '    <itunes:email>' . htmlspecialchars($podcastSettings['email'] ?? '') . '</itunes:email>' . "\n";
     $rss .= '</itunes:owner>' . "\n";
-    $rss .= '<itunes:image href="' . htmlspecialchars($podcastSettings['image'] ?? '') . '" />' . "\n";
+    
+    // Fix cover art URL - ensure it has full domain
+    $coverArt = $podcastSettings['image'] ?? '';
+    if ($coverArt && !preg_match('/^https?:\/\//', $coverArt)) {
+        $coverArt = $siteUrl . '/uploads/' . $coverArt;
+    }
+    $rss .= '<itunes:image href="' . htmlspecialchars($coverArt) . '" />' . "\n";
     $rss .= '<itunes:category text="' . htmlspecialchars($podcastSettings['category'] ?? '') . '">' . "\n";
     if (isset($podcastSettings['subcategory']) && !empty($podcastSettings['subcategory'])) {
         $rss .= '    <itunes:category text="' . htmlspecialchars($podcastSettings['subcategory']) . '" />' . "\n";
@@ -108,21 +118,84 @@ function generatePodcastFeed() {
     $rss .= '</itunes:category>' . "\n";
     $rss .= '<itunes:explicit>' . ($podcastSettings['explicit'] === 'yes' ? 'yes' : 'no') . '</itunes:explicit>' . "\n";
     
+    // Add atom:link for podcast feed URL (self-reference, required by many validators)
+    $rss .= '<atom:link href="' . htmlspecialchars($siteUrl . '/feeds/podcast.xml') . '" rel="self" type="application/rss+xml" />' . "\n";
+    
     // Sort episodes by publish date
     usort($episodes, function($a, $b) {
         return strtotime($b['publish_date']) - strtotime($a['publish_date']);
     });
     
+    // For debugging
+    error_log("Starting to add episodes to feed, total episodes: " . count($episodes));
+    $validEpisodeCount = 0;
+    
     // Add episodes
     foreach ($episodes as $episode) {
-        if (!isset($episode['publish_date']) || strtotime($episode['publish_date']) > time()) {
-            continue; // Skip future episodes
+        // Skip episodes without required fields
+        if (empty($episode['title']) || empty($episode['audio_file'])) {
+            error_log("Skipping episode without title or audio file: " . ($episode['id'] ?? 'unknown'));
+            continue;
         }
         
+        // Skip future episodes
+        if (!isset($episode['publish_date']) || strtotime($episode['publish_date']) > time()) {
+            error_log("Skipping future episode: " . $episode['title'] . " (" . ($episode['publish_date'] ?? 'unknown date') . ")");
+            continue; 
+        }
+        
+        $validEpisodeCount++;
+        error_log("Adding episode to feed: " . $episode['title']);
+
         // Format audio file URL
         $audioUrl = $episode['audio_file'];
         if (!preg_match('/^https?:\/\//', $audioUrl)) {
             $audioUrl = $siteUrl . '/uploads/' . $audioUrl;
+        }
+        
+        // Try to get the file size for the audio file
+        $fileSize = 0;
+        $localPath = '';
+        $mimeType = 'audio/mpeg'; // Default to MP3
+        
+        if (!preg_match('/^https?:\/\//', $episode['audio_file'])) {
+            $localPath = $uploadsDir . '/' . $episode['audio_file'];
+            if (file_exists($localPath)) {
+                $fileSize = filesize($localPath);
+                
+                // Detect MIME type based on file extension
+                $extension = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+                switch ($extension) {
+                    case 'mp3':
+                        $mimeType = 'audio/mpeg';
+                        break;
+                    case 'm4a':
+                    case 'mp4':
+                        $mimeType = 'audio/mp4';
+                        break;
+                    case 'ogg':
+                        $mimeType = 'audio/ogg';
+                        break;
+                    case 'wav':
+                        $mimeType = 'audio/wav';
+                        break;
+                }
+                
+                error_log("Found local audio file, size: " . $fileSize . " bytes, type: " . $mimeType . " - " . $localPath);
+            } else {
+                error_log("Audio file not found locally: " . $localPath);
+            }
+        } else {
+            // For remote files, try to get headers to determine size
+            $headers = get_headers($audioUrl, 1);
+            if (isset($headers['Content-Length'])) {
+                $fileSize = (int)$headers['Content-Length'];
+                error_log("Found remote audio file, size from headers: " . $fileSize . " bytes");
+            }
+            if (isset($headers['Content-Type'])) {
+                $mimeType = $headers['Content-Type'];
+                error_log("Content type from headers: " . $mimeType);
+            }
         }
         
         // Format episode art URL
@@ -138,18 +211,26 @@ function generatePodcastFeed() {
         $rss .= '    <itunes:summary>' . htmlspecialchars($episode['description']) . '</itunes:summary>' . "\n";
         
         if (isset($episode['show_notes']) && !empty($episode['show_notes'])) {
-            // Convert Markdown to HTML (assuming Parsedown is available)
+            // Convert Markdown to HTML
+            $html = $episode['show_notes'];
+            
+            // Make sure Parsedown is available
+            require_once dirname(dirname(dirname(__FILE__))) . '/lib/Parsedown.php';
+            
             if (class_exists('Parsedown')) {
                 $parsedown = new Parsedown();
-                $html = $parsedown->text($episode['show_notes']);
+                $html = $parsedown->text($html);
+                error_log("Converted show notes to HTML with Parsedown for episode: " . $episode['title']);
             } else {
                 // Simple fallback for Markdown conversion
-                $html = nl2br(htmlspecialchars($episode['show_notes']));
+                $html = nl2br(htmlspecialchars($html));
+                error_log("Parsedown not available, using fallback conversion for episode: " . $episode['title']);
             }
+            
             $rss .= '    <content:encoded><![CDATA[' . $html . ']]></content:encoded>' . "\n";
         }
         
-        $rss .= '    <enclosure url="' . htmlspecialchars($audioUrl) . '" length="0" type="audio/mpeg" />' . "\n";
+        $rss .= '    <enclosure url="' . htmlspecialchars($audioUrl) . '" length="' . $fileSize . '" type="' . $mimeType . '" />' . "\n";
         $rss .= '    <guid isPermaLink="false">' . htmlspecialchars($episode['id']) . '</guid>' . "\n";
         $rss .= '    <pubDate>' . date('r', strtotime($episode['publish_date'])) . '</pubDate>' . "\n";
         $rss .= '    <itunes:duration>' . htmlspecialchars($episode['duration']) . '</itunes:duration>' . "\n";
@@ -174,11 +255,18 @@ function generatePodcastFeed() {
         $rss .= '</item>' . "\n";
     }
     
+    // Log how many episodes were actually included
+    error_log("Finished adding episodes to feed, valid episodes included: " . $validEpisodeCount);
+    
     $rss .= '</channel>' . "\n";
     $rss .= '</rss>';
     
     // Save RSS feed
-    file_put_contents($feedsDir . '/podcast.xml', $rss);
+    if (file_put_contents($feedsDir . '/podcast.xml', $rss)) {
+        error_log("Successfully wrote podcast feed to " . $feedsDir . '/podcast.xml');
+    } else {
+        error_log("Failed to write podcast feed to " . $feedsDir . '/podcast.xml');
+    }
 }
 
 // Handle different HTTP methods

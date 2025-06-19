@@ -84,9 +84,9 @@ function mapFields($section, $data) {
     if ($section == 'general') {
         // Map general settings fields to site section
         return [
-            'title' => $data['site_title'] ?? null,
-            'description' => $data['site_description'] ?? null,
-            'url' => $data['site_url'] ?? null,
+            'title' => $data['title'] ?? null,
+            'description' => $data['description'] ?? null,
+            'url' => $data['url'] ?? null,
             'timezone' => $data['timezone'] ?? null,
             'language' => $data['language'] ?? 'en'
         ];
@@ -98,138 +98,270 @@ function mapFields($section, $data) {
     return $data;
 }
 
-// Handle different HTTP methods
-switch ($_SERVER['REQUEST_METHOD']) {
-    case 'GET':
-        if (isset($_GET['section'])) {
-            // Get specific section
-            $requestedSection = $_GET['section'];
+// Handle different sections
+$section = $_GET['section'] ?? 'general';
+
+switch ($section) {
+    case 'general':
+        // Handle general settings
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get settings
+            $settings = $config['site'] ?? [];
+            sendJsonResponse($settings);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Update settings
+            $input = json_decode(file_get_contents('php://input'), true);
             
-            // Special case for about section - load content from README.md
-            if ($requestedSection === 'about') {
-                // Path to README.md file
-                $readmePath = dirname(dirname(dirname(__FILE__))) . '/README.md';
-                
-                // Get CMS version information
-                $version = 'Unknown';
-                $versionFile = dirname(dirname(dirname(__FILE__))) . '/version.php';
-                if (file_exists($versionFile)) {
-                    include_once $versionFile;
-                    $version = defined('FORMA_VERSION') ? FORMA_VERSION : 'Unknown';
-                }
-                
-                // System information
-                $systemInfo = [
-                    'php_version' => PHP_VERSION,
-                    'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-                    'database_type' => 'Flat File',
-                    'cms_version' => $version,
-                    'version_date' => defined('FORMA_VERSION_DATE') ? FORMA_VERSION_DATE : null,
-                    'dev_mode' => defined('FORMA_DEV_MODE') ? FORMA_DEV_MODE : false
-                ];
-                
-                if (file_exists($readmePath)) {
-                    // Load README content
-                    $readmeContent = file_get_contents($readmePath);
-                    
-                    // Parse markdown to HTML using Parsedown if available
-                    if (class_exists('Parsedown') || file_exists(dirname(dirname(dirname(__FILE__))) . '/lib/Parsedown.php')) {
-                        if (!class_exists('Parsedown')) {
-                            require_once dirname(dirname(dirname(__FILE__))) . '/lib/Parsedown.php';
-                        }
-                        $parsedown = new Parsedown();
-                        $htmlContent = $parsedown->text($readmeContent);
-                    } else {
-                        // Fallback to raw markdown if Parsedown is not available
-                        $htmlContent = nl2br(htmlspecialchars($readmeContent));
-                    }
-                    
-                    echo json_encode([
-                        'content' => $htmlContent,
-                        'rawContent' => $readmeContent,
-                        'system' => $systemInfo
-                    ]);
-                    exit;
-                } else {
-                    // Even if README is missing, return system info
-                    echo json_encode([
-                        'content' => '<p>README.md file not found</p>',
-                        'rawContent' => 'README.md file not found',
-                        'system' => $systemInfo
-                    ]);
-                    exit;
-                }
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                sendJsonResponse(['success' => false, 'error' => 'Invalid JSON input'], 400);
             }
             
-            $section = $sectionMapping[$requestedSection] ?? $requestedSection;
+            // Update the config
+            $config['site'] = array_merge($config['site'] ?? [], $input);
             
-            error_log("Requested section: $requestedSection, Mapped to: $section");
-            
-            if (isset($config[$section])) {
-                // If requesting an old section name, map to the new structure
-                if ($requestedSection == 'general' && $section == 'site') {
-                    echo json_encode([
-                        'site_title' => $config[$section]['title'] ?? '',
-                        'site_description' => $config[$section]['description'] ?? '',
-                        'site_url' => $config[$section]['url'] ?? '',
-                        'timezone' => $config[$section]['timezone'] ?? 'UTC',
-                        'language' => $config[$section]['language'] ?? 'en'
-                    ]);
-                } else {
-                    echo json_encode($config[$section]);
-                }
-            } else {
-                http_response_code(404);
-                echo json_encode(['error' => 'Section not found', 'requested' => $requestedSection, 'mapped' => $section]);
+            // Save the config
+            if (file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) === false) {
+                sendJsonResponse(['success' => false, 'error' => 'Failed to save settings'], 500);
             }
-        } else {
-            // Get all settings
-            echo json_encode($config);
+            
+            sendJsonResponse(['success' => true]);
         }
         break;
-
-    case 'POST':
-        if (isset($_GET['section'])) {
-            // Update section
-            $requestedSection = $_GET['section'];
-            $section = $sectionMapping[$requestedSection] ?? $requestedSection;
+        
+    case 'blog':
+        // Handle blog settings
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get settings
+            $settings = $config['blog'] ?? [];
+            sendJsonResponse($settings);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Update settings
+            $input = json_decode(file_get_contents('php://input'), true);
             
-            error_log("Updating section: $requestedSection, Mapped to: $section");
-            
-            $data = json_decode(file_get_contents('php://input'), true);
-            error_log("Received data: " . json_encode($data));
-            
-            if ($data) {
-                // Map fields if necessary
-                if ($requestedSection !== $section) {
-                    $data = mapFields($requestedSection, $data);
-                }
-                
-                // Update config
-                $config[$section] = array_merge($config[$section] ?? [], $data);
-                
-                // Save changes
-                if (saveSettings()) {
-                    // Note: RSS feed regeneration will be handled by the blog section when needed
-                    // Regenerating here was causing conflicts with blog API validation
-                    
-                    echo json_encode(['success' => true]);
-                } else {
-                    http_response_code(500);
-                    echo json_encode(['error' => 'Failed to save settings']);
-                }
-            } else {
-                http_response_code(400);
-                echo json_encode(['error' => 'Invalid JSON data']);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                sendJsonResponse(['success' => false, 'error' => 'Invalid JSON input'], 400);
             }
-        } else {
-            http_response_code(400);
-            echo json_encode(['error' => 'Section parameter required']);
+            
+            // Update the config
+            $config['blog'] = array_merge($config['blog'] ?? [], $input);
+            
+            // Save the config
+            if (file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) === false) {
+                sendJsonResponse(['success' => false, 'error' => 'Failed to save settings'], 500);
+            }
+            
+            sendJsonResponse(['success' => true]);
         }
         break;
-
+        
+    case 'podcast':
+        // Handle podcast settings
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get settings
+            $settings = $config['podcast'] ?? [];
+            sendJsonResponse($settings);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Update settings
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                sendJsonResponse(['success' => false, 'error' => 'Invalid JSON input'], 400);
+            }
+            
+            // Update the config
+            $config['podcast'] = array_merge($config['podcast'] ?? [], $input);
+            
+            // Save the config
+            if (file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) === false) {
+                sendJsonResponse(['success' => false, 'error' => 'Failed to save settings'], 500);
+            }
+            
+            sendJsonResponse(['success' => true]);
+        }
+        break;
+        
+    case 'cache':
+        // Handle cache settings
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get settings
+            $settings = $config['cache'] ?? [
+                'enabled' => false,
+                'ttl' => 3600,
+                'excluded_paths' => ['/admin']
+            ];
+            
+            // Add cache status
+            $settings['status'] = getCacheStatus();
+            
+            sendJsonResponse($settings);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Update settings
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                sendJsonResponse(['success' => false, 'error' => 'Invalid JSON input'], 400);
+            }
+            
+            // Update the config
+            $config['cache'] = array_merge($config['cache'] ?? [], $input);
+            
+            // Ensure exclusions is always an array
+            if (isset($config['cache']['excluded_paths']) && !is_array($config['cache']['excluded_paths'])) {
+                if (empty($config['cache']['excluded_paths'])) {
+                    $config['cache']['excluded_paths'] = [];
+                } else {
+                    $config['cache']['excluded_paths'] = [$config['cache']['excluded_paths']];
+                }
+            }
+            
+            // Always exclude admin
+            if (!in_array('/admin', $config['cache']['excluded_paths'])) {
+                $config['cache']['excluded_paths'][] = '/admin';
+            }
+            
+            // Save the config
+            if (file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) === false) {
+                sendJsonResponse(['success' => false, 'error' => 'Failed to save settings'], 500);
+            }
+            
+            sendJsonResponse(['success' => true]);
+        }
+        break;
+        
+    case 'about':
+        // Handle about section
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get system information
+            $systemInfo = [
+                'cms_version' => '1.0.0',
+                'version_date' => '2023-05-20',
+                'php_version' => PHP_VERSION,
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                'database_type' => 'Flat File',
+                'dev_mode' => true
+            ];
+            
+            // Try to get README content
+            $readmeFile = dirname(dirname(dirname(__FILE__))) . '/README.md';
+            $readmeContent = '';
+            
+            if (file_exists($readmeFile)) {
+                $readmeContent = file_get_contents($readmeFile);
+                
+                // Convert markdown to HTML if Parsedown is available
+                if (class_exists('Parsedown')) {
+                    require_once dirname(dirname(dirname(__FILE__))) . '/lib/Parsedown.php';
+                    $parsedown = new Parsedown();
+                    $readmeContent = $parsedown->text($readmeContent);
+                }
+            }
+            
+            sendJsonResponse([
+                'system' => $systemInfo,
+                'content' => $readmeContent
+            ]);
+        }
+        break;
+        
     default:
-        http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed']);
-        break;
+        sendJsonResponse(['error' => 'Unknown section: ' . $section], 400);
+}
+
+/**
+ * Get cache status
+ */
+function getCacheStatus() {
+    $cacheDir = dirname(dirname(dirname(__FILE__))) . '/cache';
+    
+    if (!file_exists($cacheDir)) {
+        return [
+            'size' => '0 bytes',
+            'count' => 0,
+            'last_rebuild' => 'Never',
+            'files' => [],
+            'server_info' => getServerInfo($cacheDir)
+        ];
+    }
+    
+    $totalSize = 0;
+    $fileCount = 0;
+    $lastRebuild = 'Never';
+    $lastRebuildFile = $cacheDir . '/.last_rebuild';
+    $cacheFiles = [];
+    
+    if (file_exists($lastRebuildFile)) {
+        $timestamp = file_get_contents($lastRebuildFile);
+        if ($timestamp) {
+            $lastRebuild = date('Y-m-d H:i:s', (int)$timestamp);
+        }
+    }
+    
+    $it = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($cacheDir, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    
+    foreach ($it as $file) {
+        if ($file->isFile() && pathinfo($file->getFilename(), PATHINFO_EXTENSION) === 'html') {
+            $totalSize += $file->getSize();
+            $fileCount++;
+            
+            // Add to files list
+            $relativePath = str_replace($cacheDir, '', $file->getPathname());
+            $cacheFiles[] = [
+                'path' => $relativePath,
+                'size' => formatFileSize($file->getSize()),
+                'modified' => date('Y-m-d H:i:s', filemtime($file->getPathname()))
+            ];
+        }
+    }
+    
+    // Sort files by modification time (newest first)
+    usort($cacheFiles, function($a, $b) {
+        return strtotime($b['modified']) - strtotime($a['modified']);
+    });
+    
+    // Format size for display
+    $formattedSize = formatFileSize($totalSize);
+    
+    return [
+        'size' => $formattedSize,
+        'count' => $fileCount,
+        'last_rebuild' => $lastRebuild,
+        'files' => $cacheFiles,
+        'server_info' => getServerInfo($cacheDir)
+    ];
+}
+
+/**
+ * Format file size for display
+ */
+function formatFileSize($bytes) {
+    if ($bytes < 1024) {
+        return $bytes . ' bytes';
+    } elseif ($bytes < 1024 * 1024) {
+        return round($bytes / 1024, 2) . ' KB';
+    } else {
+        return round($bytes / (1024 * 1024), 2) . ' MB';
+    }
+}
+
+/**
+ * Get server information
+ */
+function getServerInfo($cacheDir) {
+    return [
+        'php_version' => PHP_VERSION,
+        'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+        'cache_directory' => $cacheDir,
+        'directory_writable' => is_writable($cacheDir) ? 'Yes' : 'No'
+    ];
+}
+
+/**
+ * Send JSON response
+ */
+function sendJsonResponse($data, $statusCode = 200) {
+    http_response_code($statusCode);
+    echo json_encode($data);
+    exit;
 } 
